@@ -1,0 +1,9 @@
+div.btnMain { 
+	width:113px; 
+	height:133px;
+	background: url(../images/lg-btn.png);
+	background-size: 113px 133px;
+	display: table-cell;
+	vertical-align: bottom;
+	text-align: right;
+}
