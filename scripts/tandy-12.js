@@ -219,16 +219,15 @@ class Osc {
 	}
 
 	play( tone, state ) {
+		if (!(typeof this.osc === 'undefined' || this.osc === null)) {
+			this.osc.stop();
+		}
 		if ( state ) {
 			this.osc = this.context.createOscillator();
 			this.osc.type = 'square';
 			this.osc.frequency.value = this.freq( tone );
 			this.osc.connect(this.context.destination);
 			this.osc.start();
-		} else {
-			if (!(typeof this.osc === 'undefined' || this.osc === null)) {
-				this.osc.stop();
-			}
 		}
 	}
 };
@@ -356,7 +355,6 @@ class Sequencer{
 					this.pos = 0;
 				} else {
 					this.stop();
-					this.os.endSeq( this.label );
 				}
 			} else {
 				var note = this.seq[this.pos++];
@@ -376,6 +374,10 @@ class Sequencer{
 
 	stop() {
 		this.run = false;
+		var tmpThis = this;
+		setTimeout( function() {
+			tmpThis.os.endSeq( tmpThis.label );
+		}, 125);
 	}
 };
 
