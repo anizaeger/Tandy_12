@@ -1,0 +1,22 @@
+Version pre-Alpha
+
+CHANGES:
+	Added hardware emulation:
+		Buttons
+		Lights
+		Clock
+		Flasher
+		Tone Oscillator
+
+	Added Operating System:
+		Tone Sequencer
+		Bootup Animation
+		Application Picker
+
+	Added Games:
+		Organ
+		Song Writer
+		Repeat
+		Torpedo
+		Roulette
+		Baseball

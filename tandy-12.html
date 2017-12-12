@@ -1,16 +1,41 @@
 <html>
 <head>
 	<meta charset="utf-8"/>
-	<script src="scripts/tandy-12.js"></script>
+
+	<script data-main="scripts/tandy-12.js" src="scripts/lib/require.js"></script>
+
 	<link rel="stylesheet" type="text/css" href="styles/tandy-12.css"></link>
 	<title>Tandy 12</title>
 </head>
-<body onLoad="init()">
-	<table>
-		<tr><td align=center colspan=3><button>Space-2</button><button onclick="gplAlert()">About</button><button>Repeat-2</button></td></tr>
-		<tr><td><table id="playfield"></table></td></tr>
-		<tr><td align=center colspan=3><button>Start</button><button>Select</button><button>Play-2/Hit-7</button></td></tr>
-		<tr><td align=center><a href="about/licenses.html" rel="jslicense">JavaScript license information</a></td></tr>
+<body>
+	<table width=100%>
+		<tr>
+			<td>
+				<table>
+					<tr><td align=center><button onclick="gplAlert()">About</button></td></tr>
+					<tr>
+						<td align=center>
+							<button onclick="hw.click('space')">Space-2</button>
+							<input type="checkbox" id="switch" onchange="hw.setPower()">
+							<button onclick="hw.click('repeat')">Repeat-2</button>
+						</td>
+					</tr>
+					<tr><td><table id="playfield"></table></td></tr>
+					<tr>
+						<td align=center colspan=3>
+							<button onclick="hw.click('start')">Start</button>
+							<button onclick="hw.click('select')">Select</button>
+							<button onclick="hw.click('playhit')">Play-2/Hit-7</button>
+						</td>
+					</tr>
+					<tr><td align=center><a href="about/licenses.html" rel="jslicense">JavaScript license information</a></td></tr>
+				</table>
+			</td>
+			<td>
+				<iframe id="manpage" src="about:blank"></iframe>
+			</td>
+		</tr>
 	</table>
+	
 </body>
 </html>
