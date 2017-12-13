@@ -119,6 +119,7 @@ class Hardware {
 			for ( var light = 0; light < 12; light++ ) {
 				this.lights[ light ].lit( false );
 			}
+			document.getElementById('manpage').src = 'about:blank';
 		}
 	}
 
@@ -534,6 +535,30 @@ class Boot {
 	}
 };
 
+class Manpage {
+	constructor( app ) {
+		this.manFrame = document.getElementById('manpage');
+		this.pages = [
+			'picker',
+			'organ',
+			'song-writer',
+			'repeat',
+			'torpedo',
+			'tag-it',
+			'roulette',
+			'baseball',
+			'repeat-plus',
+			'treasure-hunt',
+			'compete',
+			'fire-away',
+			'hide-n-seek'
+		]
+	}
+	setManpage( app ) {
+		this.manFrame.src = 'man/' + this.pages[ app ] + '.html';
+	}
+}
+
 class Picker {
 	constructor( os, id = 0 ) {
 		this.os = os;
@@ -541,6 +566,7 @@ class Picker {
 		this.doc = new Manpage();
 		this.btnNum = id;
 		this.select = false;
+		this.doc.setManpage(0);
 	}
 
 	clockTick() {
@@ -561,6 +587,7 @@ class Picker {
 		switch ( btnName ) {
 		case 'start':
 			this.os.blastClear();
+			this.doc.setManpage( this.btnNum + 1);
 			this.os.sysMem = null;
 			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
 			break;
@@ -575,29 +602,6 @@ class Picker {
 		}
 	}
 };
-
-class Manpage {
-	constructor() {
-		this.manFrame = document.getElementById('manpage');
-		this.pages = [
-			'organ.html',
-			'song-writer',
-			'repeat',
-			'torpedo',
-			'tag-it',
-			'roulette',
-			'baseball',
-			'repeat-plus',
-			'treasure-hunt',
-			'compete',
-			'fire-away',
-			'hide-n-seek'
-		]
-	}
-	setManpage( game ) {
-		
-	}
-}
 
 /*
 Organ
