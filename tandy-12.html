@@ -5,12 +5,13 @@
 	<script data-main="scripts/tandy-12.js" src="scripts/lib/require.js"></script>
 
 	<link rel="stylesheet" type="text/css" href="styles/tandy-12.css"></link>
+	<link rel="import" href="man/manpage.html"></link>
 	<title>Tandy 12</title>
 </head>
-<body>
-	<table width=100% border=1>
+<body style="margin:0px;padding:0px">
+	<table width=100%>
 		<tr>
-			<td>
+			<td style="width:400px">
 				<table>
 					<tr><td align=center><button onclick="gplAlert()">About</button></td></tr>
 					<tr>
@@ -31,8 +32,10 @@
 					<tr><td align=center><a href="about/licenses.html" rel="jslicense">JavaScript license information</a></td></tr>
 				</table>
 			</td>
-			<td>
-				<iframe id="manpage" src="about:blank"></iframe>
+			<td valign=top>
+				<div style='position: relative; width: 100%; height: 0px; padding-bottom: 60%;'>
+					<iframe id='manpage' src='about:blank' style='position: absolute; height: 100%; width: 100%; border: none;'></iframe>
+				</div>
 			</td>
 		</tr>
 	</table>

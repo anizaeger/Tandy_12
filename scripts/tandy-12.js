@@ -485,7 +485,11 @@ class OpSys {
 	playBip( label, btn = 7, light = false ) {
 		var tmpThis = this;
 		setTimeout( function() {
-			tmpThis.tone( btn, true );
+			if ( light ) {
+				tmpThis.blast( btn, true );
+			} else {
+				tmpThis.tone( btn, true );
+			}
 			setTimeout( function() {
 				tmpThis.blast( btn, false );
 				setTimeout( function() {
@@ -589,6 +593,7 @@ class Picker {
 			this.os.blastClear();
 			this.doc.setManpage( this.btnNum + 1);
 			this.os.sysMem = null;
+			this.os.playBip('picker', this.btnNum, true);
 			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
 			break;
 		case 'select':
@@ -965,8 +970,11 @@ class Game6 {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
+		this.scoreboard = new Baseball( this );
 		this.os.sysMem = this;
-		this.pitchBall = true;
+		this.pitchBall = false;
+		this.hit = false;
+		this.run = false;
 	}
 
 	btnClick( btnName ) {
@@ -976,6 +984,9 @@ class Game6 {
 			break;
 		case 'start':
 			this.pitchBall = true;
+			this.hit = false;
+			this.run = false;
+			this.scoreboard.pitch();
 			break;
 		case 'playhit':
 			this.hitBall();
@@ -984,20 +995,124 @@ class Game6 {
 	}
 
 	clockTick() {
-		if ( this.pitchBall == true ) {
+		this.scoreboard.update();
+		if ( this.pitchBall ) {
 			this.os.flasher = true;
 			this.btnNum = this.os.randBtn();
 			this.os.blastClear();
 			this.os.blast( this.btnNum, true );
-		} else {
-			this.os.lightFlash( this.btnNum );
+		} else if ( this.hit ) {
+			this.hit = false;
+			this.os.blastFlash( this.btnNum, 'hit', 3 );
+		} else if ( this.run ) {
+			this.run = this.scoreboard.run();
 		}
 	}
 
 	hitBall() {
 		this.pitchBall = false;
+		this.hit = true;
+	}
+
+	endSeq( label ) {
+		switch( label ) {
+		case 'hit':
+			this.scoreboard.hit( this.btnNum );
+			this.os.lightFlash( this.btnNum );
+			this.run = true;
+			break;
+		}
 	}
 };
+
+class Baseball{
+	constructor( game ) {
+		this.game = game;
+		this.outcome = [ 'Triple','Out','Out','Single','Out','Home Run','Out','Out','Single','Out','Double','Out' ];
+		this.outs = null;
+		this.start()
+	}
+
+	start() {
+		this.inning = 1;
+		this.outs = 0;
+		this.half = false;
+		this.score = [ 0, 0 ];
+		this.bases = [ false, false, false, false ];
+	}
+	
+	pitch() {
+		this.bases[0] = true;
+	}
+
+	hit( btn ) {
+		switch (this.outcome[ btn ]) {
+		case 'Single':		// Single
+			this.advance = 1;
+			break;
+		case 'Double':		// Double
+			this.advance = 2;
+			break;
+		case 'Triple':		// Triple
+			this.advance = 3;
+			break;
+		case 'Home Run':	// Home Run
+			this.advance = 4;
+			break;
+		case 'Out':		// Out
+			this.outs++
+			this.advance = 0;
+		}
+	}
+
+	run() {
+		if ( this.advance-- > 0 ) {
+			if ( this.bases.pop()) {
+				this.score[ this.half ? 1 : 0 ]++
+			}
+			this.bases.unshift( false );
+			return true;
+		} else {
+			this.endPlay();
+			return false;
+		}
+	}
+
+	endPlay() {
+		if ( this.outs == 3 ) {
+			this.bases = [ false, false, false, false ];
+			this.outs = 0;
+			this.half = !this.half;
+			if ( !this.half ) {
+				this.inning++;
+			}
+		}
+		this.update()
+	}
+
+	update() {
+		var manpage = document.getElementById('manpage');
+		var scoreboard = manpage.contentDocument? manpage.contentDocument: manpage.contentWindow.document;
+		var halfTxt;
+		if ( this.half ) {
+			halfTxt = "Bottom";
+		} else {
+			halfTxt = "Top";
+		}
+		scoreboard.getElementById('half').innerHTML=halfTxt;
+		scoreboard.getElementById('inning').innerHTML=this.inning;
+		for ( var base = 0; base < 4; base++ ) {
+			if ( this.bases[base] ) {
+				scoreboard.getElementById('base'+base).innerHTML='*';
+			} else {
+				scoreboard.getElementById('base'+base).innerHTML='&nbsp;';
+			}
+		}
+		scoreboard.getElementById('outs').innerHTML=this.outs;
+		scoreboard.getElementById('away').innerHTML=this.score[0];
+		scoreboard.getElementById('home').innerHTML=this.score[1];
+	}
+}
 
 /*
 Repeat Plus
