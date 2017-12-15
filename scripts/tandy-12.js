@@ -29,6 +29,7 @@
 */
 
 var hw;
+var doc;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -119,7 +120,7 @@ class Hardware {
 			for ( var light = 0; light < 12; light++ ) {
 				this.lights[ light ].lit( false );
 			}
-			document.getElementById('manpage').src = 'about:blank';
+			doc.setManpage('main');
 		}
 	}
 
@@ -540,10 +541,21 @@ class Boot {
 };
 
 class Manpage {
-	constructor( app ) {
+	constructor() {
 		this.manFrame = document.getElementById('manpage');
+	}
+	setManpage( app ) {
+		this.manFrame.src = 'man/' + app + '.html';
+	}
+}
+
+class Picker {
+	constructor( os, id = 0 ) {
+		this.os = os;
+		this.os.sysMem = this;
+		this.btnNum = id;
+		this.select = false;
 		this.pages = [
-			'picker',
 			'organ',
 			'song-writer',
 			'repeat',
@@ -557,20 +569,7 @@ class Manpage {
 			'fire-away',
 			'hide-n-seek'
 		]
-	}
-	setManpage( app ) {
-		this.manFrame.src = 'man/' + this.pages[ app ] + '.html';
-	}
-}
-
-class Picker {
-	constructor( os, id = 0 ) {
-		this.os = os;
-		this.os.sysMem = this;
-		this.doc = new Manpage();
-		this.btnNum = id;
-		this.select = false;
-		this.doc.setManpage(0);
+		doc.setManpage('picker');
 	}
 
 	clockTick() {
@@ -591,7 +590,7 @@ class Picker {
 		switch ( btnName ) {
 		case 'start':
 			this.os.blastClear();
-			this.doc.setManpage( this.btnNum + 1);
+			doc.setManpage( this.pages[ this.btnNum ]);
 			this.os.sysMem = null;
 			this.os.playBip('picker', this.btnNum, true);
 			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
@@ -723,14 +722,10 @@ class Game2 {
 	btnClick( btnName ) {
 		switch( btnName ) {
 		case 'start':
-			if ( this.gameOver ) {
-				this.startGame();
-			}
+			this.startGame();
 			break;
 		case 'select':
-			if ( this.gameOver ) {
-				this.os.selectPgm( this.id );
-			}
+			this.os.selectPgm( this.id );
 			break;
 		}
 	}
@@ -739,27 +734,31 @@ class Game2 {
 		if ( this.getInput ) {
 			this.os.blast( btn, state );
 			if ( state ) {
-				if ( btn == this.seq[ this.score ]) {
-					this.score++
+				if ( btn == this.seq[ this.count ]) {
+					this.count++
 				} else {
 					this.gameOver = true;
 				}
 			} else {
 				if ( this.gameOver ) {
 					this.loss();
-				} else if ( this.score >= this.seq.length ) {
-					this.os.playBip();
+				} else if ( this.count >= this.seq.length ) {
+					this.os.playBip('success');
 				}
 			}
 		}
 	}
 
-	endBip() {
-		this.genSeq();
+	endBip( label ) {
+		switch( label ) {
+		case 'success':
+			this.genSeq();
+			break;
+		}
 	}
 
 	genSeq() {
-		this.score = 0;
+		this.count = 0;
 		this.seq.push( this.os.randBtn());
 		this.os.clkReset();
 		this.os.startSeq( this.seq, 'genSeq' );
@@ -779,19 +778,19 @@ class Game2 {
 			this.flashScore();
 			break;
 		case 'gameOver':
-			this.os.selectPgm( this.id );
+
 			break;
 		}
 	}
 
 	flashScore() {
-		if ( this.score < 12 ) {
-			this.os.selectPgm( this.id );
-		} else if ( this.score >= 12 && this.score <= 22 ) {
+		if (( this.seq.len - 1 ) < 12 ) {
+			this.endSeq( 'gameOver' );
+		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
 			this.os.blastFlash( 0, 'gameOver',3 );
-		} else if ( this.score >= 23 && this.score <= 33 ) {
+		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
 			this.os.blastFlash( 1, 'gameOver',3 );
-		} else if ( this.score >= 34 ) {
+		} else if (( this.seq.len - 1 ) >= 34 ) {
 			this.os.blastFlash( 2, 'gameOver',3 );
 		}
 	}
@@ -879,6 +878,20 @@ class Game4 {
 		}
 	}
 
+	button( btn, state ) {
+		
+	}
+
+	clockTick() {
+		if ( this.newBtn ) {
+			this.newBtn = false;
+			this.btnNum = this.os.randBtn();
+			this.os.playBip('', this.btnNum, true );
+		} else {
+			this.newBtn = true;
+		}
+	}
+
 	showScore() {
 		if ( score < 10 ) {
 			
@@ -928,6 +941,9 @@ class Game5 {
 			case 'start':
 				this.spin();
 				break;
+			case 'select':
+				this.os.selectPgm( this.id );
+				break;
 			}
 		}
 	}
@@ -957,7 +973,7 @@ class Game5 {
 	}
 
 	endSeq( label ) {
-		this.os.selectPgm( this.id );
+		this.btnEnable = true;
 	}
 
 };
@@ -1230,6 +1246,7 @@ class Game11 {
 
 function init() {
 	printBoard();
+	doc = new Manpage();
 	hw = new Hardware();
 };
 init();

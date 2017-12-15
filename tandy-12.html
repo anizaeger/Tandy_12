@@ -5,7 +5,6 @@
 	<script data-main="scripts/tandy-12.js" src="scripts/lib/require.js"></script>
 
 	<link rel="stylesheet" type="text/css" href="styles/tandy-12.css"></link>
-	<link rel="import" href="man/manpage.html"></link>
 	<title>Tandy 12</title>
 </head>
 <body style="margin:0px;padding:0px">
@@ -13,23 +12,21 @@
 		<tr>
 			<td style="width:400px">
 				<table>
-					<tr><td align=center><button onclick="gplAlert()">About</button></td></tr>
 					<tr>
 						<td align=center>
-							<button onclick="hw.click('space')">Space-2</button>
-							<input type="checkbox" id="switch" onchange="hw.setPower()">
-							<button onclick="hw.click('repeat')">Repeat-2</button>
+							<button onclick="hw.click('space')">SPACE-2</button>
+							OFF<input type="checkbox" id="switch" onchange="hw.setPower()">ON
+							<button onclick="hw.click('repeat')">REPEAT-2</button>
 						</td>
 					</tr>
 					<tr><td><table id="playfield"></table></td></tr>
 					<tr>
 						<td align=center colspan=3>
-							<button onclick="hw.click('start')">Start</button>
-							<button onclick="hw.click('select')">Select</button>
-							<button onclick="hw.click('playhit')">Play-2/Hit-7</button>
+							<button onclick="hw.click('start')">START/PITCH-7</button>
+							<button onclick="hw.click('select')">SELECT</button>
+							<button onclick="hw.click('playhit')">PLAY-2/HIT-7</button>
 						</td>
 					</tr>
-					<tr><td align=center><a href="about/licenses.html" rel="jslicense">JavaScript license information</a></td></tr>
 				</table>
 			</td>
 			<td valign=top>
@@ -39,6 +36,19 @@
 			</td>
 		</tr>
 	</table>
-	
+	<table width=100%>
+		<tr>
+			<td width=50%>
+				<button onclick="gplAlert()">About</button><br />
+				Brought to you by:<br />
+				NYFnet Enterprises
+			</td>
+			<td width=50%>
+				<a href="about/licenses.html" rel="jslicense">JavaScript license information</a><br />
+				&#169;2017 <a href="mailto:anizaeger@nyfnet.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
+				<a href=#top>Back to Top</a>
+			</td>
+		</tr>
+	</table>
 </body>
 </html>
