@@ -29,6 +29,7 @@
 */
 
 var hw;
+var doc;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -119,6 +120,7 @@ class Hardware {
 			for ( var light = 0; light < 12; light++ ) {
 				this.lights[ light ].lit( false );
 			}
+			doc.setManpage('main');
 		}
 	}
 
@@ -484,7 +486,11 @@ class OpSys {
 	playBip( label, btn = 7, light = false ) {
 		var tmpThis = this;
 		setTimeout( function() {
-			tmpThis.tone( btn, true );
+			if ( light ) {
+				tmpThis.blast( btn, true );
+			} else {
+				tmpThis.tone( btn, true );
+			}
 			setTimeout( function() {
 				tmpThis.blast( btn, false );
 				setTimeout( function() {
@@ -534,13 +540,36 @@ class Boot {
 	}
 };
 
+class Manpage {
+	constructor() {
+		this.manFrame = document.getElementById('manpage');
+	}
+	setManpage( app ) {
+		this.manFrame.src = 'man/' + app + '.html';
+	}
+}
+
 class Picker {
 	constructor( os, id = 0 ) {
 		this.os = os;
 		this.os.sysMem = this;
-		this.doc = new Manpage();
 		this.btnNum = id;
 		this.select = false;
+		this.pages = [
+			'organ',
+			'song-writer',
+			'repeat',
+			'torpedo',
+			'tag-it',
+			'roulette',
+			'baseball',
+			'repeat-plus',
+			'treasure-hunt',
+			'compete',
+			'fire-away',
+			'hide-n-seek'
+		]
+		doc.setManpage('picker');
 	}
 
 	clockTick() {
@@ -561,7 +590,9 @@ class Picker {
 		switch ( btnName ) {
 		case 'start':
 			this.os.blastClear();
+			doc.setManpage( this.pages[ this.btnNum ]);
 			this.os.sysMem = null;
+			this.os.playBip('picker', this.btnNum, true);
 			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
 			break;
 		case 'select':
@@ -575,29 +606,6 @@ class Picker {
 		}
 	}
 };
-
-class Manpage {
-	constructor() {
-		this.manFrame = document.getElementById('manpage');
-		this.pages = [
-			'organ.html',
-			'song-writer',
-			'repeat',
-			'torpedo',
-			'tag-it',
-			'roulette',
-			'baseball',
-			'repeat-plus',
-			'treasure-hunt',
-			'compete',
-			'fire-away',
-			'hide-n-seek'
-		]
-	}
-	setManpage( game ) {
-		
-	}
-}
 
 /*
 Organ
@@ -714,14 +722,10 @@ class Game2 {
 	btnClick( btnName ) {
 		switch( btnName ) {
 		case 'start':
-			if ( this.gameOver ) {
-				this.startGame();
-			}
+			this.startGame();
 			break;
 		case 'select':
-			if ( this.gameOver ) {
-				this.os.selectPgm( this.id );
-			}
+			this.os.selectPgm( this.id );
 			break;
 		}
 	}
@@ -730,27 +734,31 @@ class Game2 {
 		if ( this.getInput ) {
 			this.os.blast( btn, state );
 			if ( state ) {
-				if ( btn == this.seq[ this.score ]) {
-					this.score++
+				if ( btn == this.seq[ this.count ]) {
+					this.count++
 				} else {
 					this.gameOver = true;
 				}
 			} else {
 				if ( this.gameOver ) {
 					this.loss();
-				} else if ( this.score >= this.seq.length ) {
-					this.os.playBip();
+				} else if ( this.count >= this.seq.length ) {
+					this.os.playBip('success');
 				}
 			}
 		}
 	}
 
-	endBip() {
-		this.genSeq();
+	endBip( label ) {
+		switch( label ) {
+		case 'success':
+			this.genSeq();
+			break;
+		}
 	}
 
 	genSeq() {
-		this.score = 0;
+		this.count = 0;
 		this.seq.push( this.os.randBtn());
 		this.os.clkReset();
 		this.os.startSeq( this.seq, 'genSeq' );
@@ -770,19 +778,19 @@ class Game2 {
 			this.flashScore();
 			break;
 		case 'gameOver':
-			this.os.selectPgm( this.id );
+
 			break;
 		}
 	}
 
 	flashScore() {
-		if ( this.score < 12 ) {
-			this.os.selectPgm( this.id );
-		} else if ( this.score >= 12 && this.score <= 22 ) {
+		if (( this.seq.len - 1 ) < 12 ) {
+			this.endSeq( 'gameOver' );
+		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
 			this.os.blastFlash( 0, 'gameOver',3 );
-		} else if ( this.score >= 23 && this.score <= 33 ) {
+		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
 			this.os.blastFlash( 1, 'gameOver',3 );
-		} else if ( this.score >= 34 ) {
+		} else if (( this.seq.len - 1 ) >= 34 ) {
 			this.os.blastFlash( 2, 'gameOver',3 );
 		}
 	}
@@ -870,6 +878,20 @@ class Game4 {
 		}
 	}
 
+	button( btn, state ) {
+		
+	}
+
+	clockTick() {
+		if ( this.newBtn ) {
+			this.newBtn = false;
+			this.btnNum = this.os.randBtn();
+			this.os.playBip('', this.btnNum, true );
+		} else {
+			this.newBtn = true;
+		}
+	}
+
 	showScore() {
 		if ( score < 10 ) {
 			
@@ -919,6 +941,9 @@ class Game5 {
 			case 'start':
 				this.spin();
 				break;
+			case 'select':
+				this.os.selectPgm( this.id );
+				break;
 			}
 		}
 	}
@@ -948,7 +973,7 @@ class Game5 {
 	}
 
 	endSeq( label ) {
-		this.os.selectPgm( this.id );
+		this.btnEnable = true;
 	}
 
 };
@@ -961,8 +986,11 @@ class Game6 {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
+		this.scoreboard = new Baseball( this );
 		this.os.sysMem = this;
-		this.pitchBall = true;
+		this.pitchBall = false;
+		this.hit = false;
+		this.run = false;
 	}
 
 	btnClick( btnName ) {
@@ -972,6 +1000,9 @@ class Game6 {
 			break;
 		case 'start':
 			this.pitchBall = true;
+			this.hit = false;
+			this.run = false;
+			this.scoreboard.pitch();
 			break;
 		case 'playhit':
 			this.hitBall();
@@ -980,20 +1011,124 @@ class Game6 {
 	}
 
 	clockTick() {
-		if ( this.pitchBall == true ) {
+		this.scoreboard.update();
+		if ( this.pitchBall ) {
 			this.os.flasher = true;
 			this.btnNum = this.os.randBtn();
 			this.os.blastClear();
 			this.os.blast( this.btnNum, true );
-		} else {
-			this.os.lightFlash( this.btnNum );
+		} else if ( this.hit ) {
+			this.hit = false;
+			this.os.blastFlash( this.btnNum, 'hit', 3 );
+		} else if ( this.run ) {
+			this.run = this.scoreboard.run();
 		}
 	}
 
 	hitBall() {
 		this.pitchBall = false;
+		this.hit = true;
+	}
+
+	endSeq( label ) {
+		switch( label ) {
+		case 'hit':
+			this.scoreboard.hit( this.btnNum );
+			this.os.lightFlash( this.btnNum );
+			this.run = true;
+			break;
+		}
 	}
 };
+
+class Baseball{
+	constructor( game ) {
+		this.game = game;
+		this.outcome = [ 'Triple','Out','Out','Single','Out','Home Run','Out','Out','Single','Out','Double','Out' ];
+		this.outs = null;
+		this.start()
+	}
+
+	start() {
+		this.inning = 1;
+		this.outs = 0;
+		this.half = false;
+		this.score = [ 0, 0 ];
+		this.bases = [ false, false, false, false ];
+	}
+	
+	pitch() {
+		this.bases[0] = true;
+	}
+
+	hit( btn ) {
+		switch (this.outcome[ btn ]) {
+		case 'Single':		// Single
+			this.advance = 1;
+			break;
+		case 'Double':		// Double
+			this.advance = 2;
+			break;
+		case 'Triple':		// Triple
+			this.advance = 3;
+			break;
+		case 'Home Run':	// Home Run
+			this.advance = 4;
+			break;
+		case 'Out':		// Out
+			this.outs++
+			this.advance = 0;
+		}
+	}
+
+	run() {
+		if ( this.advance-- > 0 ) {
+			if ( this.bases.pop()) {
+				this.score[ this.half ? 1 : 0 ]++
+			}
+			this.bases.unshift( false );
+			return true;
+		} else {
+			this.endPlay();
+			return false;
+		}
+	}
+
+	endPlay() {
+		if ( this.outs == 3 ) {
+			this.bases = [ false, false, false, false ];
+			this.outs = 0;
+			this.half = !this.half;
+			if ( !this.half ) {
+				this.inning++;
+			}
+		}
+		this.update()
+	}
+
+	update() {
+		var manpage = document.getElementById('manpage');
+		var scoreboard = manpage.contentDocument? manpage.contentDocument: manpage.contentWindow.document;
+		var halfTxt;
+		if ( this.half ) {
+			halfTxt = "Bottom";
+		} else {
+			halfTxt = "Top";
+		}
+		scoreboard.getElementById('half').innerHTML=halfTxt;
+		scoreboard.getElementById('inning').innerHTML=this.inning;
+		for ( var base = 0; base < 4; base++ ) {
+			if ( this.bases[base] ) {
+				scoreboard.getElementById('base'+base).innerHTML='*';
+			} else {
+				scoreboard.getElementById('base'+base).innerHTML='&nbsp;';
+			}
+		}
+		scoreboard.getElementById('outs').innerHTML=this.outs;
+		scoreboard.getElementById('away').innerHTML=this.score[0];
+		scoreboard.getElementById('home').innerHTML=this.score[1];
+	}
+}
 
 /*
 Repeat Plus
@@ -1111,6 +1246,7 @@ class Game11 {
 
 function init() {
 	printBoard();
+	doc = new Manpage();
 	hw = new Hardware();
 };
 init();
