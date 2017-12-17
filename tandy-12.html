@@ -15,7 +15,12 @@
 					<tr>
 						<td align=center>
 							<button onclick="hw.click('space')">SPACE-2</button>
-							OFF<input type="checkbox" id="switch" onchange="hw.setPower()">ON
+							OFF
+							<label class="switch">
+								<input type="checkbox" id="switch" onchange="hw.setPower()">
+								<span class="slider round"></span>
+							</label>
+							ON
 							<button onclick="hw.click('repeat')">REPEAT-2</button>
 						</td>
 					</tr>

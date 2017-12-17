@@ -102,6 +102,7 @@ class Hardware {
 			this.lights[ light ] = new Light( light );
 		}
 
+
 		this.flasher = new Flasher( this );
 
 		this.setPower();
@@ -111,6 +112,7 @@ class Hardware {
 		this.power = document.getElementById('switch').checked;
 		if ( this.power ) {
 			this.power = true;
+			this.getInput = true;
 			this.os = new OpSys( this );
 		} else {
 			this.power = false;
@@ -125,8 +127,11 @@ class Hardware {
 	}
 
 	button( btn, state ) {
-		if ( this.power && this.os != null ) {
-			this.os.button( btn, state );
+		if ( this.getInput == state ) {
+			this.getInput = !state;
+			if ( this.power && this.os != null ) {
+				this.os.button( btn, state );
+			}
 		}
 	}
 
@@ -339,12 +344,14 @@ class Sequencer{
 		this.seq = [];
 	}
 
-	load( tones, label ) {
+	load( tones, label, light = true, note = true ) {
 		this.label = label;
 		this.seq.length = 0;
 		this.seq = tones.slice();
 		this.len = this.seq.length;
 		this.pos = 0;
+		this.light = light;
+		this.note = note;
 		this.os.clkReset();
 		this.start();
 	}
@@ -483,12 +490,14 @@ class OpSys {
 		}
 	}
 
-	playBip( label, btn = 7, light = false ) {
+	playBip( label, btn = 7, light = false, note = true ) {
 		var tmpThis = this;
 		setTimeout( function() {
-			if ( light ) {
+			if ( light && note ) {
 				tmpThis.blast( btn, true );
-			} else {
+			} else if ( light ) {
+				tmpThis.light( btn, true );
+			} else if ( tone ) {
 				tmpThis.tone( btn, true );
 			}
 			setTimeout( function() {
@@ -647,6 +656,9 @@ class Game1 {
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.clear();
+			break;
 		case 'select':
 			if ( !this.playing ) {
 				this.os.selectPgm( this.id );
@@ -678,10 +690,14 @@ class Game1 {
 		}
 	}
 
+	clear() {
+		this.song.length = 0;
+		this.newSong = false;
+	}
+
 	addNote( btn ) {
 		if ( this.newSong ) {
-			this.song.length = 0;
-			this.newSong = false;
+			this.clear();
 		}
 		if ( this.song.length < 44 ) {
 			this.song.push( btn );
@@ -809,6 +825,7 @@ class Game3 {
 	}
 
 	startGame() {
+		this.gameOver = false;
 		this.sub = this.os.randBtn();
 		this.subRow = this.os.btnRow( this.sub );
 		this.subCol = this.os.btnCol( this.sub );
@@ -818,6 +835,8 @@ class Game3 {
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.os.startGame();
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
@@ -847,15 +866,17 @@ class Game3 {
 	}
 
 	win() {
+		this.gameOver = true;
 		this.os.startSeq([0,0,2,4,5,2,5,'-',7,7,8,4,7,7,7,'-'], 'win');
 	}
 
 	loss() {
+		this.gameOver = true;
 		this.os.blastFlash( this.sub, 'loss', 3 );
 	}
 
 	endSeq( label ) {
-		this.os.selectPgm( this.id );
+		
 	}
 };
 
@@ -966,7 +987,7 @@ class Game5 {
 
 	spin() {
 		this.btnEnable = false;
-		this.ticks = this.os.randRange(11,20);
+		this.ticks = this.os.randRange(11,40);
 		this.count = 0;
 		this.idx = this.wheel.length;
 		this.os.clkReset();
@@ -1167,14 +1188,91 @@ class Game8 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.seq = [];
+		this.presses = [];
+		this.gameOver = true;
+		this.start();
 	}
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
 		}
+	}
+
+	button( btn, state ) {
+		if ( this.gameOver )
+			return;
+		if ( this.getInput || !state ) {
+			this.os.blast( btn, state );
+		}
+		if ( state ) {
+			this.presses[ this.tries++ ] = btn;
+		} else {
+			if ( this.tries == 3) {
+				this.getInput = false;
+				this.score();
+			}
+		}
+	}
+
+	start() {
+		for ( var idx = 0; idx < 3; idx++ ) {
+			this.seq[ idx ] = this.os.randBtn();
+		}
+		this.gameOver = false;
+		this.getInput = true;
+		this.tries = 0;
+	}
+
+	score() {
+		var matches = 0;
+		for ( var idx = 0; idx < 3; idx++ ) {
+			if ( this.seq[ idx ] == this.presses[ idx ]) {
+				matches++;
+			}
+		}
+		switch( matches ) {
+		case 0:
+			this.loss();
+			break;
+		case 1:
+			this.os.blastFlash( 0, 'score', 3 );
+			break;
+		case 2:
+			this.os.startSeq([ 1, 0, 1, 0, 1, 0 ], 'score');
+			break;
+		case 3:
+			this.win();
+			break;
+		}
+	}
+
+	endSeq( label ) {
+		switch ( label ) {
+		case 'score':
+			if ( !this.gameOver ) {
+				this.tries = 0;
+				this.getInput = true;
+			}
+			break;
+		case 'gameOver':
+			this.gameOver = true;
+			break;	
+		}
+	}
+
+	win() {
+		this.os.startSeq([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
+	}
+
+	loss() {
+		this.os.startSeq( this.seq, 'gameOver' );
 	}
 }
 
