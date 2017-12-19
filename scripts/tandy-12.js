@@ -269,7 +269,6 @@ class Flasher {
 	constructor( hw ) {
 		this.hw = hw;
 		this.reset();
-		this.state = true;
 	}
 
 	clockTick() {
@@ -278,7 +277,7 @@ class Flasher {
 				if ( this.cycles )
 					++this.count;
 				this.on();
-				this.state = false;
+				this.state = !this.state;
 			} else {
 				this.off();
 				if ( this.cycles && this.count >= this.cycles ) {
@@ -287,13 +286,16 @@ class Flasher {
 						this.hw.endSeq( this.label );
 					}
 				} else {
-					this.state = true;
+					this.state = !this.state;
 				}
 			}
 		}
 	}
 
-	start( btn, label, cycles = 0 ) {
+	start( btn, label, cycles = 0, light, tone ) {
+		this.state = true;
+		this.light = light;
+		this.tone = tone ;
 		if ( btn < 0 || btn > 11 ) {
 			return;
 		} else {
@@ -358,7 +360,7 @@ class Sequencer{
 
 	clockTick() {
 		if ( this.run ) {
-			this.os.blastClear();
+			this.os.clear();
 			if ( this.pos == this.len ) {
 				if ( this.repeat ) {
 					this.pos = 0;
@@ -366,9 +368,9 @@ class Sequencer{
 					this.stop();
 				}
 			} else {
-				var note = this.seq[this.pos++];
+				var note = this.seq[ this.pos++ ];
 				if ( note >= 0 && note <= 11 ) {
-					this.os.blast( note, true );
+					this.os.blast( note, true, this.light, this.note );
 				}
 			}
 			return true;
@@ -414,7 +416,7 @@ class OpSys {
 	}
 
 	selectPgm( id ) {
-		this.blastClear();
+		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
 	}
@@ -446,42 +448,8 @@ class OpSys {
 		return row
 	}
 
-	light( num, state ) {
-		this.hw.light( num, state );
-	}
-
-	lightFlash( btns, label, cycles = 0 ) {
-		this.hw.flasher.reset();
-		this.hw.flasher.light = true;
-		this.hw.flasher.start( btns, label, cycles );
-	}
-
-	lightClear() {
-		this.hw.flasher.stop();
-		for ( var btn = 0; btn < 12; btn++ ) {
-			this.light( btn, false );
-		}
-	}
-
-	tone( num, state ) {
-		this.hw.tone( num, state );
-	}
-
-	toneFlash( btns, label, cycles = 0 ) {
-		this.hw.flasher.reset();
-		this.hw.flasher.tone = true;
-		this.hw.flasher.start( btns, label, cycles );
-	}
-
-	toneClear() {
-		this.hw.flasher.stop();
-		for ( var num = 0; num < 12; num++ ) {
-			this.tone( num, false );
-		}
-	}
-
-	startSeq( tones, label ) {
-		this.seq.load( tones, label );
+	startSeq( tones, label, light, tone ) {
+		this.seq.load( tones, label, light, tone );
 	}
 
 	endSeq( label ) {
@@ -490,16 +458,10 @@ class OpSys {
 		}
 	}
 
-	playBip( label, btn = 7, light = false, note = true ) {
+	playBip( btn = 7, label, light = false, tone = true ) {
 		var tmpThis = this;
 		setTimeout( function() {
-			if ( light && note ) {
-				tmpThis.blast( btn, true );
-			} else if ( light ) {
-				tmpThis.light( btn, true );
-			} else if ( tone ) {
-				tmpThis.tone( btn, true );
-			}
+			tmpThis.blast( btn, true, light, tone );
 			setTimeout( function() {
 				tmpThis.blast( btn, false );
 				setTimeout( function() {
@@ -511,19 +473,24 @@ class OpSys {
 		}, 125);
 	}
 
-	blast( btn, state ) {
-		this.light( btn, state );
-		this.tone( btn, state );
+	blast( btn, state = true, light = true, tone = true ) {
+		if ( light )
+			this.hw.light( btn, state );
+		if ( tone )
+			this.hw.tone( btn, state );
 	}
 
-	blastFlash( btns, label, cycles = 0 ) {
+	flash( btns, label, cycles = 0, light = true, tone = true ) {
 		this.hw.flasher.reset();
-		this.hw.flasher.start( btns, label, cycles );
+		this.hw.flasher.start( btns, label, cycles, light, tone );
 	}
 
-	blastClear() {
-		this.lightClear();
-		this.toneClear();
+	clear() {
+		this.hw.flasher.stop();
+		for ( var num = 0; num < 12; num++ ) {
+			this.hw.light( num, false );
+			this.hw.tone( num, false );
+		}
 	}
 
 	btnClick( btnName ) {
@@ -540,7 +507,7 @@ class Boot {
 	}
 
 	clockTick() {
-		this.os.blastClear();
+		this.os.clear();
 		if ( this.btnNum < 12 ) {
 			this.os.blast(this.btnNum++, true);
 		} else {
@@ -583,7 +550,7 @@ class Picker {
 
 	clockTick() {
 		if ( !this.select ) {
-			this.os.lightFlash( this.btnNum );
+			this.os.flash( this.btnNum, '', 0, true, false );
 			this.select = true;
 		}
 	}
@@ -598,10 +565,10 @@ class Picker {
 	btnClick( btnName ) {
 		switch ( btnName ) {
 		case 'start':
-			this.os.blastClear();
+			this.os.clear();
 			doc.setManpage( this.pages[ this.btnNum ]);
 			this.os.sysMem = null;
-			this.os.playBip('picker', this.btnNum, true);
+			this.os.playBip( this.btnNum, '', true );
 			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
 			break;
 		case 'select':
@@ -759,7 +726,7 @@ class Game2 {
 				if ( this.gameOver ) {
 					this.loss();
 				} else if ( this.count >= this.seq.length ) {
-					this.os.playBip('success');
+					this.os.playBip( 7, 'success' );
 				}
 			}
 		}
@@ -803,11 +770,11 @@ class Game2 {
 		if (( this.seq.len - 1 ) < 12 ) {
 			this.endSeq( 'gameOver' );
 		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
-			this.os.blastFlash( 0, 'gameOver',3 );
+			this.os.flash( 0, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
-			this.os.blastFlash( 1, 'gameOver',3 );
+			this.os.flash( 1, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 34 ) {
-			this.os.blastFlash( 2, 'gameOver',3 );
+			this.os.flash( 2, 'gameOver', 3 );
 		}
 	}
 };
@@ -872,7 +839,7 @@ class Game3 {
 
 	loss() {
 		this.gameOver = true;
-		this.os.blastFlash( this.sub, 'loss', 3 );
+		this.os.flash( this.sub, 'loss', 3 );
 	}
 
 	endSeq( label ) {
@@ -893,6 +860,9 @@ class Game4 {
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
@@ -900,44 +870,53 @@ class Game4 {
 	}
 
 	button( btn, state ) {
-		
+		if ( state ) {
+			this.getInput = false;
+		}
 	}
 
 	clockTick() {
-		if ( this.newBtn ) {
-			this.newBtn = false;
-			this.btnNum = this.os.randBtn();
-			this.os.playBip('', this.btnNum, true );
-		} else {
-			this.newBtn = true;
+		if ( this.inPlay ) {	// A game is in progress
+			if ( this.newBtn ) {	// Advance light only every other second.
+				this.newBtn = false;
+				this.btnNum = this.os.randBtn();
+				this.os.playBip( this.btnNum );
+				this.getInput = true;
+			} else {
+				this.newBtn = true;
+			}
 		}
+	}
+
+	start() {
+		
 	}
 
 	showScore() {
 		if ( score < 10 ) {
 			
 		} else if ( score < 20 ) {
-			this.os.blastFlash(0,3);
+			this.os.flash( 0, '', 3 );
 		} else if ( score < 30 ) {
-			this.os.blastFlash(1,3);
+			this.os.flash( 1, '', 3 );
 		} else if ( score < 40 ) {
-			this.os.blastFlash(2,3);
+			this.os.flash( 2, '', 3 );
 		} else if ( score < 50 ) {
-			this.os.blastFlash(3,3);
+			this.os.flash( 3, '', 3 );
 		} else if ( score < 60 ) {
-			this.os.blastFlash(4,3);
+			this.os.flash( 4, '', 3 );
 		} else if ( score < 70 ) {
-			this.os.blastFlash(5,3);
+			this.os.flash( 5, '', 3 );
 		} else if ( score < 80 ) {
-			this.os.blastFlash(6,3);
+			this.os.flash( 6, '', 3 );
 		} else if ( score < 90 ) {
-			this.os.blastFlash(7,3);
+			this.os.flash( 7, '', 3 );
 		} else if ( score < 100 ) {
-			this.os.blastFlash(8,3);
+			this.os.flash( 8, '', 3 );
 		} else if ( score < 110 ) {
-			this.os.blastFlash(9,3);
+			this.os.flash( 9, '', 3 );
 		} else {
-			this.os.blastFlash(10,3);
+			this.os.flash( 10, '', 3 );
 		}
 	}
 };
@@ -976,10 +955,10 @@ class Game5 {
 					this.idx = 0;
 				}
 				this.os.flasher = true;
-				this.os.blastClear();
+				this.os.clear();
 				this.os.blast( this.wheel[ this.idx ], true);
 			} else {
-				this.os.blastFlash( this.wheel[ this.idx ], 'gameOver', 3 );
+				this.os.flash( this.wheel[ this.idx ], 'gameOver', 3 );
 				this.btnEnable = true;
 			}
 		}
@@ -1036,11 +1015,11 @@ class Game6 {
 		if ( this.pitchBall ) {
 			this.os.flasher = true;
 			this.btnNum = this.os.randBtn();
-			this.os.blastClear();
+			this.os.clear();
 			this.os.blast( this.btnNum, true );
 		} else if ( this.hit ) {
 			this.hit = false;
-			this.os.blastFlash( this.btnNum, 'hit', 3 );
+			this.os.flash( this.btnNum, 'hit', 3 );
 		} else if ( this.run ) {
 			this.run = this.scoreboard.run();
 		}
@@ -1055,7 +1034,7 @@ class Game6 {
 		switch( label ) {
 		case 'hit':
 			this.scoreboard.hit( this.btnNum );
-			this.os.lightFlash( this.btnNum );
+			this.os.flash( this.btnNum, '', 0, true, false );
 			this.run = true;
 			break;
 		}
@@ -1242,7 +1221,7 @@ class Game8 {
 			this.loss();
 			break;
 		case 1:
-			this.os.blastFlash( 0, 'score', 3 );
+			this.os.flash( 0, 'score', 3 );
 			break;
 		case 2:
 			this.os.startSeq([ 1, 0, 1, 0, 1, 0 ], 'score');
@@ -1285,14 +1264,121 @@ class Game9 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.start();
 	}
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
 		}
+	}
+
+	button( btn, state ) {
+		if ( this.inPlay ) {
+			this.inPlay = false;
+			if ( state ) {
+
+				// Determine player who hit their button first
+				if ( !( btn >= 4 && btn <= 7 )) {
+					this.os.clear();
+					this.os.blast( btn, true );
+					if ( btn <= 3 ) {
+						this.player = 0;
+					} else if ( btn >= 8 ) {
+						this.player = 1;
+					}
+				}
+
+				// Determine if button pressed is correct, and if not, award the opposite player.
+				if ( btn == this.target[ this.player ]) {
+					this.winner = this.player;
+				} else {
+					this.winner = !this.player * 1;
+				}
+				this.hit = btn;
+			}
+		} else if ( !state && btn == this.hit ) {
+			this.os.clear();
+			if ( ++this.points[ this.winner ] >= 5 ) {
+				this.score();
+			} else {
+				this.run();
+			}
+		}
+	}
+
+	score() {
+		if ( this.winner ) {
+			this.os.startSeq([ 8, 9, 10, 11, 10, 9, 8 ], 'win', true, false );
+		} else {
+			this.os.startSeq([ 0, 1, 2, 3, 2, 1, 0 ], 'win', true, false );
+		}
+	}
+
+	clockTick() {
+		if ( this.sweep ) {
+			this.os.playBip( this.curBtn, '', true, false );
+			this.randBtn = this.os.randBtn();
+
+			if ( this.ascend ) {
+				this.curBtn++;
+			} else {
+				this.curBtn--;
+			}
+
+			if ( this.curBtn <= 4 || this.curBtn >= 7 ) {
+				this.ascend = !this.ascend;
+			}
+
+			if ( this.curBtn == this.randBtn && this.steps > 3 ) {
+				this.sweep = false;
+				this.inPlay = true;
+				this.os.flash( this.curBtn, 'inPlay', 3, true, false );
+				this.target = [ this.curBtn - 4, this.curBtn + 4 ];
+			} else {
+				this.steps++;
+			}
+		}
+	}
+
+	endSeq( label ) {
+		switch ( label ) {
+		case 'inPlay':
+			this.inPlay = false;
+			this.run();
+		}
+	}
+
+	advanceBtn() {
+		if ( this.ascend ) {
+			this.curBtn++;
+		} else {
+			this.curBtn--;
+		}
+		if ( this.curBtn <= 4 || this.curBtn >= 7 ) {
+			this.ascend = !this.ascend;
+		}
+	}
+
+	start() {
+		this.gameOver = !this.gameOver;
+		this.points = [ 0, 0 ];
+		this.run();
+	}
+
+	run() {
+		this.ascend = true;
+		this.curBtn = 4;
+		this.steps = 0;
+		this.sweep = true;
+		this.player = null;
+		this.hit = null;
+		this.winner = null;
 	}
 
 	randBtn() {
