@@ -85,13 +85,14 @@ function printBoard() {
 }
 
 /* -----------------------------------------------------------------------------
-CLASS:			Hardware
-DESCRIPTION:		Asks user to select an input file
-RETURNS:		int: menuTier - 1
+CLASS:			Tandy12
+DESCRIPTION:		Simulates the hardware aspects of the Tandy-12
 ----------------------------------------------------------------------------- */
 
-class Hardware {
+class Tandy12 {
 	constructor() {
+
+		// 
 		this.clock = new Clock( this );
 		this.osc = new Osc();
 		this.power = null;
@@ -108,6 +109,12 @@ class Hardware {
 		this.setPower();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::setPower
+	DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
+				to the main page.
+	RETURNS:		int: menuTier - 1
+	----------------------------------------------------------------------------- */
 	setPower() {
 		this.power = document.getElementById('switch').checked;
 		if ( this.power ) {
@@ -139,23 +146,33 @@ class Hardware {
 		if ( this.power ) {
 			if ( Array.isArray( num )) {
 				for ( var idx = 0; idx < num.length; idx++ ) {
-					this.lights[ num[ idx ]].lit( state );
+					if ( num[ idx ] >= 0 && num[ idx ] <= 11 )
+						this.lights[ num[ idx ]].lit( state );
 				}
 			} else {
-				this.lights[ num ].lit( state );
+				if ( num >= 0 && num <= 11 )
+					this.lights[ num ].lit( state );
 			}
 		}
 	}
 
 	tone( tone, state ) {
 		if ( this.power ) {
-			this.osc.play( tone, state );
+			if ( !Array.isArray( tone )) {
+				this.osc.play( tone, state );
+			}
 		}
 	}
 
 	blast( btn, state ) {
 		this.light( btn, state );
 		this.tone( btn, state );
+	}
+
+	darken() {
+		for ( var num = 0; num < 12; num++ ) {
+			this.light( num, false );
+		}
 	}
 
 	clockTick( timeStamp ){
@@ -302,11 +319,7 @@ class Flasher {
 		this.state = true;
 		this.light = light;
 		this.tone = tone ;
-		if ( btn < 0 || btn > 11 ) {
-			return;
-		} else {
-			this.btn = btn;
-		}
+		this.btn = btn;
 
 		this.label = label;
 		this.cycles = cycles;
@@ -1437,6 +1450,6 @@ class Game11 {
 function init() {
 	printBoard();
 	doc = new Manpage();
-	hw = new Hardware();
+	hw = new Tandy12();
 };
 init();
