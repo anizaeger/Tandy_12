@@ -137,7 +137,13 @@ class Hardware {
 
 	light( num, state ) {
 		if ( this.power ) {
-			this.lights[ num ].lit( state );
+			if ( Array.isArray( num )) {
+				for ( var idx = 0; idx < num.length; idx++ ) {
+					this.lights[ num[ idx ]].lit( state );
+				}
+			} else {
+				this.lights[ num ].lit( state );
+			}
 		}
 	}
 
@@ -480,9 +486,9 @@ class OpSys {
 			this.hw.tone( btn, state );
 	}
 
-	flash( btns, label, cycles = 0, light = true, tone = true ) {
+	flash( btn, label, cycles = 0, light = true, tone = true ) {
 		this.hw.flasher.reset();
-		this.hw.flasher.start( btns, label, cycles, light, tone );
+		this.hw.flasher.start( btn, label, cycles, light, tone );
 	}
 
 	clear() {
