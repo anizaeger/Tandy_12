@@ -1436,14 +1436,159 @@ class Game11 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.seq = [];
+		this.presses = [];
+		this.gameOver = true;
+		this.start();
 	}
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
 		}
+	}
+
+	button( btn, state ) {
+		// Only process button press if game isn't over
+		if ( this.gameOver )
+			return;
+		if ( this.getInput || !state ) {
+			this.os.blast( btn, state );
+		}
+		if ( state ) {
+			this.presses[ this.tries++ ] = btn;
+		} else {
+			if ( this.tries == 3) {
+				this.getInput = false;
+				this.score();
+			}
+		}
+	}
+
+	start() {
+		// Generate new sequence
+		this.seq = [];
+		this.seq.length = 0;
+		for ( var idx = 0; idx < 3; idx++ ) {
+			var randBtn = this.os.randRange( 8, 11 )
+			this.seq[ idx ] = randBtn;
+		}
+
+		this.rndCount = this.symCount( this.seq );
+
+		// Begin new game
+		this.gameOver = false;
+		this.getInput = true;
+		this.tries = 0;
+	}
+
+	score() {
+		var matches = 0;
+		var numbers = 0;
+
+		// Count number of matches
+		for ( var idx = 0; idx < 3; idx++ ) {
+			if ( this.seq[ idx ] == this.presses[ idx ]) {
+				matches++;
+			}
+		}
+
+		if ( matches == 0 ) {
+			// No matches
+			this.loss();
+		} else if ( matches == 3 ) {
+			// All matches
+			this.win();
+		} else {
+			// Some matches - count number of correct numbers in wrong position
+			var btnCount = this.symCount( this.presses );
+
+			var rndTxt = '';
+			var btnTxt = '';
+
+			for ( var idx = 0; idx < 12; idx++ ) {
+				var rnd = this.rndCount[ idx ];
+				var btn = btnCount[ idx ];
+
+
+				rndTxt += ' ' + rnd;
+				btnTxt += ' ' + btn;
+
+				if ( rnd > 0 && btn > 0 ) {
+					if ( rnd > btn ) {
+						numbers += btn;
+					} else {
+						numbers += rnd;
+					}
+				}
+			}
+
+			var matchLights = [];
+			switch ( matches ) {
+			case 1:
+				matchLights = [ 4 ];
+				break;
+			case 2:
+				matchLights = [ 4, 5 ];
+				break;
+			}
+
+			var numberLights = [];
+			switch ( numbers ) {
+			case 1:
+				numberLights = [ 0 ];
+				break;
+			case 2:
+				numberLights = [ 0, 1 ];
+				break;
+			case 3:
+				numberLights = [ 0, 1, 2 ];
+				break;
+			}
+
+			var scoreLights = numberLights.concat( matchLights );
+			this.os.flash( scoreLights, 'score', 3 );
+		}
+	}
+
+	symCount( symArray ) {
+		var result = [];
+		for ( var btn = 0; btn < 12; btn++ ) {
+			result[ btn ] = 0;
+		}
+
+		for  ( var idx = 0; idx < 3; idx++ ) {
+			++result[ symArray[ idx ]]
+		}
+
+		return result;
+	}
+
+	endSeq( label ) {
+		switch ( label ) {
+		case 'score':
+			if ( !this.gameOver ) {
+				this.tries = 0;
+				this.getInput = true;
+			}
+			break;
+		case 'gameOver':
+			this.gameOver = true;
+			break;	
+		}
+	}
+
+	win() {
+		this.os.startSeq([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
+	}
+
+	loss() {
+		this.os.startSeq( this.seq, 'gameOver' );
 	}
 }
 
