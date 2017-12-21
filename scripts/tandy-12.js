@@ -62,7 +62,6 @@ function gplAlert() {
 FUNCTION:		printBoard
 DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 			to the main page.
-RETURNS:		int: menuTier - 1
 ----------------------------------------------------------------------------- */
 
 function printBoard() {
@@ -91,8 +90,6 @@ DESCRIPTION:		Simulates the hardware aspects of the Tandy-12
 
 class Tandy12 {
 	constructor() {
-
-		// 
 		this.clock = new Clock( this );
 		this.osc = new Osc();
 		this.power = null;
@@ -113,7 +110,6 @@ class Tandy12 {
 	FUNCTION:		Hardware::setPower
 	DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 				to the main page.
-	RETURNS:		int: menuTier - 1
 	----------------------------------------------------------------------------- */
 	setPower() {
 		this.power = document.getElementById('switch').checked;
@@ -133,7 +129,12 @@ class Tandy12 {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::button
+	DESCRIPTION:		Process presses and releases of main game buttons.
+	----------------------------------------------------------------------------- */
 	button( btn, state ) {
+		// Only accept 
 		if ( this.getInput == state ) {
 			this.getInput = !state;
 			if ( this.power && this.os != null ) {
@@ -142,20 +143,28 @@ class Tandy12 {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::light
+	DESCRIPTION:		Manipulate individual and groups of lights.
+	----------------------------------------------------------------------------- */
 	light( num, state ) {
 		if ( this.power ) {
-			if ( Array.isArray( num )) {
+			if ( Array.isArray( num )) {	// Perform action on group of lights
 				for ( var idx = 0; idx < num.length; idx++ ) {
 					if ( num[ idx ] >= 0 && num[ idx ] <= 11 )
 						this.lights[ num[ idx ]].lit( state );
 				}
-			} else {
+			} else {	// Perform action on individual light.
 				if ( num >= 0 && num <= 11 )
 					this.lights[ num ].lit( state );
 			}
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::tone
+	DESCRIPTION:		Pass audio commands to Oscillator.
+	----------------------------------------------------------------------------- */
 	tone( tone, state ) {
 		if ( this.power ) {
 			if ( !Array.isArray( tone )) {
@@ -164,17 +173,29 @@ class Tandy12 {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::blast
+	DESCRIPTION:		Active light and tone associated with particular button.
+	----------------------------------------------------------------------------- */
 	blast( btn, state ) {
 		this.light( btn, state );
 		this.tone( btn, state );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::darken
+	DESCRIPTION:		Turn off all lights.
+	----------------------------------------------------------------------------- */
 	darken() {
 		for ( var num = 0; num < 12; num++ ) {
 			this.light( num, false );
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::clockTick
+	DESCRIPTION:		Receive ticks from Clock and pass on to Flasher and OpSys.
+	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
 		if ( this.power && this.os != null && typeof this.os.clockTick === "function" ) {
 			this.flasher.clockTick();
@@ -182,10 +203,18 @@ class Tandy12 {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::endSeq
+	DESCRIPTION:		Notify OpSys that Flasher has completed cycle count.
+	----------------------------------------------------------------------------- */
 	endSeq( label ) {
 		this.os.endSeq( label )
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Hardware::click
+	DESCRIPTION:		Process auxiliary buttons.
+	----------------------------------------------------------------------------- */
 	click( type ) {
 		if ( this.power && this.os != null ) {
 			this.os.btnClick( type );
@@ -193,6 +222,10 @@ class Tandy12 {
 	}
 }
 
+/* -----------------------------------------------------------------------------
+CLASS:			Light
+DESCRIPTION:		Simulates Tandy-12 lights.
+----------------------------------------------------------------------------- */
 class Light {
 	constructor(num) {
 		this.num = num;
@@ -201,10 +234,22 @@ class Light {
 	}
 
 	hue( btn ) {
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Light::hue
+	DESCRIPTION:		Store list of colors for individual lights.
+	RETURNS:		Color of associated light number
+	----------------------------------------------------------------------------- */
 		var hues = ["Indigo","Orange","Magenta","SpringGreen","Blue","Cyan","Yellow","Salmon","Lime","Red","Violet","Brown"];
 		return hues[ btn ];
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Light::lit
+	DESCRIPTION:		Sets state of light by dynamically altering background
+				color:
+					true - on
+					false - off
+	----------------------------------------------------------------------------- */
 	lit( state ) {
 		if ( state ) {
 			this.light.style.backgroundColor = this.hue(this.num);
@@ -216,6 +261,10 @@ class Light {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Light::shadeBlend
+	DESCRIPTION:		Calculate new value for color after applying shading.
+	----------------------------------------------------------------------------- */
 	shadeBlend( p, c0, c1 ) {
 		var n = p < 0 ? p * -1 : p,
 		u = Math.round,
@@ -238,16 +287,30 @@ class Light {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Osc
+DESCRIPTION:		Simulates Tandy-12 tone generator.
+----------------------------------------------------------------------------- */
 class Osc {
 	constructor() {
 		this.context = new (window.AudioContext || window.webkitAudioContext)();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::tone
+	DESCRIPTION:		Store list of tones for individual buttons.
+	RETURNS:		Frequency of associated button number
+	----------------------------------------------------------------------------- */
 	freq( tone ) {	
 		var freqs = [ 293, 330, 370, 392, 440, 494, 554, 587, 659, 740, 247, 277 ];
 		return freqs[ tone ];
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::play
+	DESCRIPTION:		Start/stop tone generator for specied tone.
+	RETURNS:		Frequency of associated button number
+	----------------------------------------------------------------------------- */
 	play( tone, state ) {
 		if (!(typeof this.osc === 'undefined' || this.osc === null)) {
 			this.osc.stop();
@@ -262,6 +325,10 @@ class Osc {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Clock
+DESCRIPTION:		Simulates Tandy-12 clock pulse generator.
+----------------------------------------------------------------------------- */
 class Clock {
 	constructor( hw ) {
 		this.hw = hw;
@@ -269,11 +336,20 @@ class Clock {
 		this.timer = null;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::reset
+	DESCRIPTION:		Reset clock by stopping and restarting.
+	----------------------------------------------------------------------------- */
 	reset() {
 		clearTimeout( this.timer );
 		this.tick();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::tick
+	DESCRIPTION:		Generate clock pulse.  After pulsing, set timer to
+				generate another pulse.
+	----------------------------------------------------------------------------- */
 	tick() {
 		this.hw.clockTick( this.timeStamp++ );
 
@@ -283,17 +359,30 @@ class Clock {
 		}, 500);
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::stop
+	DESCRIPTION:		Stop clock.
+	----------------------------------------------------------------------------- */
 	stop() {
 		clearTimeout( this.timer );
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Flasher
+DESCRIPTION:		Flash light(s) off and on.
+----------------------------------------------------------------------------- */
 class Flasher {
 	constructor( hw ) {
 		this.hw = hw;
 		this.reset();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Flasher::clockTick
+	DESCRIPTION:		Receive hardware clock pulses and flash lights
+				accordingly.
+	----------------------------------------------------------------------------- */
 	clockTick() {
 		if ( this.run ) {
 			if ( this.state ) {
@@ -315,6 +404,11 @@ class Flasher {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::start
+	DESCRIPTION:		Set flasher mode, cycle count, and label, then start
+				cycling.
+	----------------------------------------------------------------------------- */
 	start( btn, label, cycles = 0, light, tone ) {
 		this.state = true;
 		this.light = light;
@@ -333,18 +427,30 @@ class Flasher {
 		this.run = true;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::stop
+	DESCRIPTION:		Stop flasher and reinitialize settings.
+	----------------------------------------------------------------------------- */
 	stop() {
 		this.run = false;
 		this.off();
 		this.reset();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::reset
+	DESCRIPTION:		Initialize settings
+	----------------------------------------------------------------------------- */
 	reset() {
 		this.run = false;
 		this.light = false;
 		this.tone = false;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::on
+	DESCRIPTION:		Turn on specified lights and tone.
+	----------------------------------------------------------------------------- */
 	on() {
 		if ( this.light )
 			this.hw.light( this.btn, true );
@@ -352,6 +458,10 @@ class Flasher {
 			this.hw.tone( this.btn, true );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::off
+	DESCRIPTION:		Turn off lights and tone.
+	----------------------------------------------------------------------------- */
 	off() {
 		for ( var btn = 0; btn < 12; btn++ ) {
 			this.hw.blast( btn, false );
