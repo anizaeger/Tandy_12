@@ -197,7 +197,7 @@ class Tandy12 {
 	DESCRIPTION:		Receive ticks from Clock and pass on to Flasher and OpSys.
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
-		if ( this.power && this.os != null && typeof this.os.clockTick === "function" ) {
+		if ( this.power && this.os != null ) {
 			this.flasher.clockTick();
 			this.os.clockTick( timeStamp );
 		}
@@ -233,14 +233,14 @@ class Light {
 		this.light = document.getElementById(this.id);
 	}
 
-	hue( btn ) {
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Light::hue
 	DESCRIPTION:		Store list of colors for individual lights.
 	RETURNS:		Color of associated light number
 	----------------------------------------------------------------------------- */
+	hue( num ) {
 		var hues = ["Indigo","Orange","Magenta","SpringGreen","Blue","Cyan","Yellow","Salmon","Lime","Red","Violet","Brown"];
-		return hues[ btn ];
+		return hues[ num ];
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -341,7 +341,7 @@ class Clock {
 	DESCRIPTION:		Reset clock by stopping and restarting.
 	----------------------------------------------------------------------------- */
 	reset() {
-		clearTimeout( this.timer );
+		this.stop();
 		this.tick();
 	}
 
@@ -394,9 +394,7 @@ class Flasher {
 				this.off();
 				if ( this.cycles && this.count >= this.cycles ) {
 					this.stop();
-					if ( typeof this.hw.endSeq === "function" ) {
-						this.hw.endSeq( this.label );
-					}
+					this.hw.endSeq( this.label );
 				} else {
 					this.state = !this.state;
 				}
@@ -432,9 +430,8 @@ class Flasher {
 	DESCRIPTION:		Stop flasher and reinitialize settings.
 	----------------------------------------------------------------------------- */
 	stop() {
-		this.run = false;
-		this.off();
 		this.reset();
+		this.off();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1565,7 +1562,7 @@ class Game11 {
 
 	button( btn, state ) {
 		// Only process button press if game isn't over
-		if ( this.gameOver )
+		if ( this.gameOver || btn < 8 || btn > 11)
 			return;
 		if ( this.getInput || !state ) {
 			this.os.blast( btn, state );
@@ -1689,6 +1686,7 @@ class Game11 {
 			break;
 		case 'gameOver':
 			this.gameOver = true;
+			this.start();
 			break;	
 		}
 	}
