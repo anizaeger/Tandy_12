@@ -466,24 +466,34 @@ class Flasher {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Sequencer
+DESCRIPTION:		Handles outputting light and tone sequences.
+----------------------------------------------------------------------------- */
 class Sequencer{
 	constructor( os ) {
 		this.os = os;
 		this.seq = [];
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Flasher::load
+	DESCRIPTION:		Load desired sequence into memory, and set output mode.
+	----------------------------------------------------------------------------- */
 	load( tones, label, light = true, note = true ) {
 		this.label = label;
 		this.seq.length = 0;
 		this.seq = tones.slice();
 		this.len = this.seq.length;
-		this.pos = 0;
 		this.light = light;
 		this.note = note;
-		this.os.clkReset();
-		this.start();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Flasher::clockTick
+	DESCRIPTION:		Step through sequence one element at a time per clock
+				tick.
+	----------------------------------------------------------------------------- */
 	clockTick() {
 		if ( this.run ) {
 			this.os.clear();
@@ -505,7 +515,13 @@ class Sequencer{
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Flasher::start
+	DESCRIPTION:		Begin playback of sequence.
+	----------------------------------------------------------------------------- */
 	start() {
+		this.pos = 0;
+		this.os.clkReset();
 		this.run = true;
 	}
 
@@ -576,6 +592,7 @@ class OpSys {
 
 	startSeq( tones, label, light, tone ) {
 		this.seq.load( tones, label, light, tone );
+		this.seq.start();
 	}
 
 	endSeq( label ) {
@@ -742,7 +759,7 @@ class Game1 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
-		this.song = new Array();
+		this.song = [];
 		this.newSong = false;
 		this.playing = false;
 	}
@@ -929,7 +946,7 @@ class Game3 {
 	btnClick( btnName ) {
 		switch( btnName ) {
 		case 'start':
-			this.os.startGame();
+			this.startGame();
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
@@ -969,7 +986,7 @@ class Game3 {
 	}
 
 	endSeq( label ) {
-		
+		this.startGame();
 	}
 };
 
@@ -1579,7 +1596,6 @@ class Game11 {
 
 	start() {
 		// Generate new sequence
-		this.seq = [];
 		this.seq.length = 0;
 		for ( var idx = 0; idx < 3; idx++ ) {
 			var randBtn = this.os.randRange( 8, 11 )
