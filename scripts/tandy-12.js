@@ -999,6 +999,7 @@ class Game4 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.start();
 	}
 
 	btnClick( btnName ) {
@@ -1013,8 +1014,12 @@ class Game4 {
 	}
 
 	button( btn, state ) {
-		if ( state ) {
+		if ( this.inPlay && this.getInput && state ) {
 			this.getInput = false;
+			if ( this.btnNum == btn ) {
+				this.os.playBip( btn );
+				this.score++;
+			}
 		}
 	}
 
@@ -1023,44 +1028,58 @@ class Game4 {
 			if ( this.newBtn ) {	// Advance light only every other second.
 				this.newBtn = false;
 				this.btnNum = this.os.randBtn();
-				this.os.playBip( this.btnNum );
+				this.os.playBip( this.btnNum, '', true, true );
 				this.getInput = true;
 			} else {
 				this.newBtn = true;
+				if ( ++this.count > 110 )
+					this.endGame();
 			}
+		} else if ( this.getScore ) {	// Show final score
+			this.getScore = false;
+			this.showScore();
 		}
 	}
 
 	start() {
-		
+		this.count = 0;
+		this.score = 0;
+		this.inPlay = true;
+	}
+
+	endGame() {
+		this.inPlay = false;
+		this.getScore = true;
 	}
 
 	showScore() {
-		if ( score < 10 ) {
+		if ( this.score < 10 ) {
 			
-		} else if ( score < 20 ) {
+		} else if ( this.score < 20 ) {
 			this.os.flash( 0, '', 3 );
-		} else if ( score < 30 ) {
+		} else if ( this.score < 30 ) {
 			this.os.flash( 1, '', 3 );
-		} else if ( score < 40 ) {
+		} else if ( this.score < 40 ) {
 			this.os.flash( 2, '', 3 );
-		} else if ( score < 50 ) {
+		} else if ( this.score < 50 ) {
 			this.os.flash( 3, '', 3 );
-		} else if ( score < 60 ) {
+		} else if ( this.score < 60 ) {
 			this.os.flash( 4, '', 3 );
-		} else if ( score < 70 ) {
+		} else if ( this.score < 70 ) {
 			this.os.flash( 5, '', 3 );
-		} else if ( score < 80 ) {
+		} else if ( this.score < 80 ) {
 			this.os.flash( 6, '', 3 );
-		} else if ( score < 90 ) {
+		} else if ( this.score < 90 ) {
 			this.os.flash( 7, '', 3 );
-		} else if ( score < 100 ) {
+		} else if ( this.score < 100 ) {
 			this.os.flash( 8, '', 3 );
-		} else if ( score < 110 ) {
+		} else if ( this.score < 110 ) {
 			this.os.flash( 9, '', 3 );
 		} else {
 			this.os.flash( 10, '', 3 );
 		}
+
+		this.os.selectPgm( this.id );
 	}
 };
 
