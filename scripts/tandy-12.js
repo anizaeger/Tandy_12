@@ -1308,23 +1308,186 @@ class Game7 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.seq = [];
+		this.gameOver = true;
+		this.start();
+	}
+
+	start() {
+		this.gameOver = false;
+		this.seq.length = 0;
+		var randBtn = this.os.randBtn();
+		this.seq.push( randBtn );
+		this.os.startSeq( this.seq, 'genSeq' )
 	}
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
 		}
 	}
 
-	start() {
-		
+	button( btn, state ) {
+		if ( this.getInput ) {
+			this.os.blast( btn, state );
+			if ( state ) {
+				if ( this.count >= this.seq.length ) {
+					this.seq.push( btn );
+					this.newTurn = true
+				} else if ( btn == this.seq[ this.count ]) {
+					this.count++
+				} else {
+					this.gameOver = true;
+				}
+			} else {
+				if ( this.gameOver ) {
+					this.loss();
+				} else if ( this.newTurn ) {
+					this.getInput = false;
+					this.os.playBip( 7, 'success' );
+				}
+			}
+		}
 	}
 
-	addBtn() {
-		
+	loss() {
+		this.getInput = false;
+		this.os.startSeq([0,0,0,0,7,0,7,0,7,0], 'loss');
 	}
+
+	endBip( label ) {
+		switch( label ) {
+		case 'success':
+			this.endSeq('genSeq');
+			break;
+		}
+	}
+
+	endSeq( type ) {
+		switch( type ) {
+		case 'genSeq':
+			this.count = 0;
+			this.newTurn = false;
+			this.getInput = true;
+			break;
+		case 'loss':
+			this.flashScore();
+			break;
+		case 'gameOver':
+
+			break;
+		}
+	}
+
+	flashScore() {
+		if (( this.seq.len - 1 ) < 12 ) {
+			this.endSeq( 'gameOver' );
+		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
+			this.os.flash( 0, 'gameOver', 3 );
+		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
+			this.os.flash( 1, 'gameOver', 3 );
+		} else if (( this.seq.len - 1 ) >= 34 ) {
+			this.os.flash( 2, 'gameOver', 3 );
+		}
+	}
+
+/*
+	constructor( os, id ) {
+		this.os = os;
+		this.id = id;
+		this.os.sysMem = this;
+		this.seq = [];
+		this.gameOver = true;
+		this.startGame();
+	}
+
+	startGame() {
+		this.gameOver = false;
+		this.seq.length = 0;
+		this.genSeq();
+	}
+
+	btnClick( btnName ) {
+		switch( btnName ) {
+		case 'start':
+			this.startGame();
+			break;
+		case 'select':
+			this.os.selectPgm( this.id );
+			break;
+		}
+	}
+
+	button( btn, state ) {
+		if ( this.getInput ) {
+			this.os.blast( btn, state );
+			if ( state ) {
+				if ( btn == this.seq[ this.count ]) {
+					this.count++
+				} else {
+					this.gameOver = true;
+				}
+			} else {
+				if ( this.gameOver ) {
+					this.loss();
+				} else if ( this.count >= this.seq.length ) {
+					this.os.playBip( 7, 'success' );
+				}
+			}
+		}
+	}
+
+	endBip( label ) {
+		switch( label ) {
+		case 'success':
+			this.genSeq();
+			break;
+		}
+	}
+
+	genSeq() {
+		this.count = 0;
+		this.seq.push( this.os.randBtn());
+		this.os.clkReset();
+		this.os.startSeq( this.seq, 'genSeq' );
+	}
+
+	loss() {
+		this.getInput = false;
+		this.os.startSeq([0,0,0,0,7,0,7,0,7,0], 'loss');
+	}
+
+	endSeq( type ) {
+		switch( type ) {
+		case 'genSeq':
+			this.getInput = true;
+			break;
+		case 'loss':
+			this.flashScore();
+			break;
+		case 'gameOver':
+
+			break;
+		}
+	}
+
+	flashScore() {
+		if (( this.seq.len - 1 ) < 12 ) {
+			this.endSeq( 'gameOver' );
+		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
+			this.os.flash( 0, 'gameOver', 3 );
+		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
+			this.os.flash( 1, 'gameOver', 3 );
+		} else if (( this.seq.len - 1 ) >= 34 ) {
+			this.os.flash( 2, 'gameOver', 3 );
+		}
+	}
+*/
 };
 
 /*
