@@ -709,10 +709,7 @@ class Picker {
 		switch ( btnName ) {
 		case 'start':
 			this.os.clear();
-			doc.setManpage( this.pages[ this.btnNum ]);
-			this.os.sysMem = null;
-			this.os.playBip( this.btnNum, '', true );
-			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
+			this.os.playBip( this.btnNum, 'loadPgm', true );
 			break;
 		case 'select':
 			if ( this.select ){
@@ -721,6 +718,16 @@ class Picker {
 					this.btnNum = 0;
 				}
 			}
+			break;
+		}
+	}
+
+	endBip( label ) {
+		switch( label ) {
+		case 'loadPgm':
+			this.os.sysMem = null;
+			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
+			doc.setManpage( this.pages[ this.btnNum ]);
 			break;
 		}
 	}
