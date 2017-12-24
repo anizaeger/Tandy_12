@@ -1,10 +1,6 @@
 TODO:
 	Complete Games:
-		Tag-It
 		Repeat Plus
-		Treasure Hunt
-		Compete
 		Fire Away
-		Hide'N Seek
 
 	Incorporate RequireJS to split various components into different files.
