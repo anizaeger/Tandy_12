@@ -1,3 +1,11 @@
+Version pre-Alpha
+
+- CHANGES:
+	API Interface and Backend
+		Minor change to Picker. Game loading is now delayed to occur after the confirmation "bip".
+
+Version pre-Alpha
+
 - CHANGES
 	Tag-It
 		Completed game logic.
