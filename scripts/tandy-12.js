@@ -28,6 +28,10 @@
 *
 */
 
+const NUM_BTNS = 12;
+const NUM_ROWS = 4;
+const NUM_COLS = 3;
+
 var hw;
 var doc;
 
@@ -68,10 +72,10 @@ function printBoard() {
 	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
 	var btnNum = 0;
 	var boardHtml = ""
-	for ( c = 0; c < 3; c++ ) {
+	for ( c = 0; c < NUM_COLS; c++ ) {
 		boardHtml += '<td align=center>';
-		for ( r = 0; r < 4; r++) {
-			btnNum = r + ( c * 4 );
+		for ( r = 0; r < NUM_ROWS; r++) {
+			btnNum = r + ( c * NUM_ROWS );
 			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
 			boardHtml += btnTxt[btnNum];
 		}
@@ -95,8 +99,8 @@ class Tandy12 {
 		this.power = null;
 		this.os = null;
 
-		this.lights = new Array(12);
-		for ( var light = 0; light < 12; light++ ) {
+		this.lights = new Array(NUM_BTNS);
+		for ( var light = 0; light < NUM_BTNS; light++ ) {
 			this.lights[ light ] = new Light( light );
 		}
 
@@ -122,7 +126,7 @@ class Tandy12 {
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
-			for ( var light = 0; light < 12; light++ ) {
+			for ( var light = 0; light < NUM_BTNS; light++ ) {
 				this.lights[ light ].lit( false );
 			}
 			doc.setManpage('main');
@@ -151,11 +155,11 @@ class Tandy12 {
 		if ( this.power ) {
 			if ( Array.isArray( num )) {	// Perform action on group of lights
 				for ( var idx = 0; idx < num.length; idx++ ) {
-					if ( num[ idx ] >= 0 && num[ idx ] <= 11 )
+					if ( num[ idx ] >= 0 && num[ idx ] < NUM_BTNS )
 						this.lights[ num[ idx ]].lit( state );
 				}
 			} else {	// Perform action on individual light.
-				if ( num >= 0 && num <= 11 )
+				if ( num >= 0 && num < NUM_BTNS )
 					this.lights[ num ].lit( state );
 			}
 		}
@@ -187,7 +191,7 @@ class Tandy12 {
 	DESCRIPTION:		Turn off all lights.
 	----------------------------------------------------------------------------- */
 	darken() {
-		for ( var num = 0; num < 12; num++ ) {
+		for ( var num = 0; num < NUM_BTNS; num++ ) {
 			this.light( num, false );
 		}
 	}
@@ -403,12 +407,11 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Osc::start
+	FUNCTION:		Flasher::start
 	DESCRIPTION:		Set flasher mode, cycle count, and label, then start
 				cycling.
 	----------------------------------------------------------------------------- */
 	start( btn, label, cycles = 0, light, tone ) {
-		this.state = true;
 		this.light = light;
 		this.tone = tone ;
 		this.btn = btn;
@@ -426,7 +429,7 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Osc::stop
+	FUNCTION:		Flasher::stop
 	DESCRIPTION:		Stop flasher and reinitialize settings.
 	----------------------------------------------------------------------------- */
 	stop() {
@@ -435,17 +438,18 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Osc::reset
+	FUNCTION:		Flasher::reset
 	DESCRIPTION:		Initialize settings
 	----------------------------------------------------------------------------- */
 	reset() {
 		this.run = false;
+		this.state = false;
 		this.light = false;
 		this.tone = false;
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Osc::on
+	FUNCTION:		Flasher::on
 	DESCRIPTION:		Turn on specified lights and tone.
 	----------------------------------------------------------------------------- */
 	on() {
@@ -456,11 +460,11 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Osc::off
+	FUNCTION:		Flasher::off
 	DESCRIPTION:		Turn off lights and tone.
 	----------------------------------------------------------------------------- */
 	off() {
-		for ( var btn = 0; btn < 12; btn++ ) {
+		for ( var btn = 0; btn < NUM_BTNS; btn++ ) {
 			this.hw.blast( btn, false );
 		}
 	}
@@ -505,7 +509,7 @@ class Sequencer{
 				}
 			} else {
 				var note = this.seq[ this.pos++ ];
-				if ( note >= 0 && note <= 11 ) {
+				if ( note >= 0 && note < NUM_BTNS ) {
 					this.os.blast( note, true, this.light, this.note );
 				}
 			}
@@ -566,27 +570,27 @@ class OpSys {
 	randRange( min, max ) {
 		min = Math.ceil(min);
 		max = Math.floor(max);
-		return Math.floor(Math.random() * (max - min + 1)) + min;
+		return Math.floor(Math.random() * ( max - min + 1 )) + min;
 	}
 
 	randBtn() {
-		var btn = this.randRange(0,11);
+		var btn = this.randRange( 0, NUM_BTNS - 1 );
 		return btn;
 	}
 
 	button( btn, state ) {
-		if ( typeof this.sysMem.button == "function") {
+		if ( typeof this.sysMem.button == "function" ) {
 			this.sysMem.button( btn, state );
 		}
 	}
 
 	btnCol( btn ) {
-		var col = Math.floor(( btn / 12 ) * 3 );
+		var col = Math.floor(( btn / NUM_BTNS ) * NUM_COLS );
 		return col;
 	}
 
 	btnRow( btn ) {
-		var row = btn - ( this.btnCol( btn ) * 4 );
+		var row = btn - ( this.btnCol( btn ) * NUM_ROWS );
 		return row
 	}
 
@@ -630,7 +634,7 @@ class OpSys {
 
 	clear() {
 		this.hw.flasher.stop();
-		for ( var num = 0; num < 12; num++ ) {
+		for ( var num = 0; num < NUM_BTNS; num++ ) {
 			this.hw.light( num, false );
 			this.hw.tone( num, false );
 		}
@@ -651,7 +655,7 @@ class Boot {
 
 	clockTick() {
 		this.os.clear();
-		if ( this.btnNum < 12 ) {
+		if ( this.btnNum < NUM_BTNS ) {
 			this.os.blast(this.btnNum++, true);
 		} else {
 			this.os.selectPgm();
@@ -700,8 +704,8 @@ class Picker {
 
 	button( btn, state ) {
 		if ( state ) {
-			this.select = false;
 			this.btnNum = btn;
+			this.select = false;
 		}
 	}
 
@@ -714,7 +718,7 @@ class Picker {
 		case 'select':
 			if ( this.select ){
 				this.select = false;
-				if ( ++this.btnNum >= 12 ) {
+				if ( ++this.btnNum >= NUM_BTNS ) {
 					this.btnNum = 0;
 				}
 			}
@@ -1276,6 +1280,8 @@ class Baseball{
 	}
 
 	update() {
+		const AWAY_TEAM = 0;
+		const HOME_TEAM = 1;
 		var manpage = document.getElementById('manpage');
 		var scoreboard = manpage.contentDocument? manpage.contentDocument: manpage.contentWindow.document;
 		var halfTxt;
@@ -1284,18 +1290,18 @@ class Baseball{
 		} else {
 			halfTxt = "Top";
 		}
-		scoreboard.getElementById('half').innerHTML=halfTxt;
-		scoreboard.getElementById('inning').innerHTML=this.inning;
+		scoreboard.getElementById( 'half' ).innerHTML=halfTxt;
+		scoreboard.getElementById( 'inning' ).innerHTML=this.inning;
 		for ( var base = 0; base < 4; base++ ) {
 			if ( this.bases[base] ) {
-				scoreboard.getElementById('base'+base).innerHTML='*';
+				scoreboard.getElementById( 'base'+base ).innerHTML='*';
 			} else {
-				scoreboard.getElementById('base'+base).innerHTML='&nbsp;';
+				scoreboard.getElementById( 'base'+base ).innerHTML='&nbsp;';
 			}
 		}
-		scoreboard.getElementById('outs').innerHTML=this.outs;
-		scoreboard.getElementById('away').innerHTML=this.score[0];
-		scoreboard.getElementById('home').innerHTML=this.score[1];
+		scoreboard.getElementById( 'outs' ).innerHTML=this.outs;
+		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
+		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
 	}
 }
 
@@ -1395,99 +1401,6 @@ class Game7 {
 			this.os.flash( 2, 'gameOver', 3 );
 		}
 	}
-
-/*
-	constructor( os, id ) {
-		this.os = os;
-		this.id = id;
-		this.os.sysMem = this;
-		this.seq = [];
-		this.gameOver = true;
-		this.startGame();
-	}
-
-	startGame() {
-		this.gameOver = false;
-		this.seq.length = 0;
-		this.genSeq();
-	}
-
-	btnClick( btnName ) {
-		switch( btnName ) {
-		case 'start':
-			this.startGame();
-			break;
-		case 'select':
-			this.os.selectPgm( this.id );
-			break;
-		}
-	}
-
-	button( btn, state ) {
-		if ( this.getInput ) {
-			this.os.blast( btn, state );
-			if ( state ) {
-				if ( btn == this.seq[ this.count ]) {
-					this.count++
-				} else {
-					this.gameOver = true;
-				}
-			} else {
-				if ( this.gameOver ) {
-					this.loss();
-				} else if ( this.count >= this.seq.length ) {
-					this.os.playBip( 7, 'success' );
-				}
-			}
-		}
-	}
-
-	endBip( label ) {
-		switch( label ) {
-		case 'success':
-			this.genSeq();
-			break;
-		}
-	}
-
-	genSeq() {
-		this.count = 0;
-		this.seq.push( this.os.randBtn());
-		this.os.clkReset();
-		this.os.startSeq( this.seq, 'genSeq' );
-	}
-
-	loss() {
-		this.getInput = false;
-		this.os.startSeq([0,0,0,0,7,0,7,0,7,0], 'loss');
-	}
-
-	endSeq( type ) {
-		switch( type ) {
-		case 'genSeq':
-			this.getInput = true;
-			break;
-		case 'loss':
-			this.flashScore();
-			break;
-		case 'gameOver':
-
-			break;
-		}
-	}
-
-	flashScore() {
-		if (( this.seq.len - 1 ) < 12 ) {
-			this.endSeq( 'gameOver' );
-		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
-			this.os.flash( 0, 'gameOver', 3 );
-		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
-			this.os.flash( 1, 'gameOver', 3 );
-		} else if (( this.seq.len - 1 ) >= 34 ) {
-			this.os.flash( 2, 'gameOver', 3 );
-		}
-	}
-*/
 };
 
 /*
@@ -1870,7 +1783,7 @@ class Game11 {
 
 	symCount( symArray ) {
 		var result = [];
-		for ( var btn = 0; btn < 12; btn++ ) {
+		for ( var btn = 0; btn < NUM_BTNS; btn++ ) {
 			result[ btn ] = 0;
 		}
 
