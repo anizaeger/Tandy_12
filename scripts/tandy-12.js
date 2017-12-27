@@ -1646,10 +1646,36 @@ class Game10 {
 
 	btnClick( btnName ) {
 		switch( btnName ) {
+		case 'start':
+			this.start();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
 		}
+	}
+
+	button( btn, state ) {
+		if ( !state ) {
+			var tmp = this.minMaxDir( btn )
+			alert( 'min: ' + tmp[0] + ', max: ' + tmp[1]);
+		}
+	}
+
+	minMaxDir( btn ) {
+		var min = 0;
+		var max = 0;
+		if ( this.os.btnRow( btn ) <= 1 ) {
+			max = 1;
+		} else {
+			min = -1;
+		}
+		return [ min, max ];
+	}
+
+	fire( btn ) {
+		var minMaxDir = this.minMaxDir( btn );
+		this.dir = this.os.randRange( minMaxDir[0], minMaxDir[1]);
 	}
 };
 
