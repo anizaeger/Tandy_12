@@ -28,12 +28,30 @@
 *
 */
 
+// Program to launch upon powering up Tandy--12
+const STARTUP_PROG = 'Picker';
+
+const GAMES = [
+	'Organ',
+	'Song_Writer',
+	'Repeat',
+	'Torpedo',
+	'Tag_It',
+	'Roulette',
+	'Baseball',
+	'Repeat_Plus',
+	'Treasure_Hunt',
+	'Compete',
+	'Fire_Away',
+	'Hide_N_Seek'
+];
+
+// Various constants for configuring user interface.
 const NUM_BTNS = 12;
 const NUM_ROWS = 4;
 const NUM_COLS = 3;
 
 var hw;
-var doc;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -62,29 +80,13 @@ function gplAlert() {
 	window.alert(copyTxt)
 }
 
-/* -----------------------------------------------------------------------------
-FUNCTION:		printBoard
-DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
-			to the main page.
------------------------------------------------------------------------------ */
-
-function printBoard() {
-	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
-	var btnNum = 0;
-	var boardHtml = ""
-	for ( c = 0; c < NUM_COLS; c++ ) {
-		boardHtml += '<td align=center>';
-		for ( r = 0; r < NUM_ROWS; r++) {
-			btnNum = r + ( c * NUM_ROWS );
-			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += btnTxt[btnNum];
-		}
-		boardHtml += "</td>"
+class Manpage {
+	constructor() {
+		this.manFrame = document.getElementById('manpage');
 	}
-
-	document.getElementById("playfield").innerHTML=boardHtml;
-
-	
+	setManpage( app ) {
+		this.manFrame.src = 'man/' + app + '.html';
+	}
 }
 
 /* -----------------------------------------------------------------------------
@@ -98,6 +100,7 @@ class Tandy12 {
 		this.osc = new Osc();
 		this.power = null;
 		this.os = null;
+		this.doc = new Manpage();
 
 		this.lights = new Array(NUM_BTNS);
 		for ( var light = 0; light < NUM_BTNS; light++ ) {
@@ -120,7 +123,7 @@ class Tandy12 {
 		if ( this.power ) {
 			this.power = true;
 			this.getInput = true;
-			this.os = new OpSys( this );
+			this.os = new OpSys( this, this.doc );
 		} else {
 			this.power = false;
 			this.osc.play( false );
@@ -129,7 +132,7 @@ class Tandy12 {
 			for ( var light = 0; light < NUM_BTNS; light++ ) {
 				this.lights[ light ].lit( false );
 			}
-			doc.setManpage('main');
+			this.doc.setManpage('main');
 		}
 	}
 
@@ -539,10 +542,11 @@ class Sequencer{
 };
 
 class OpSys {
-	constructor( hw ) {
+	constructor( hw, doc ) {
 		this.hw = hw;
+		this.doc = doc;
 		this.timeStamp = null;
-		this.sysMem = new Boot( this );
+		this.sysMem = new ( eval( STARTUP_PROG ))( this );
 		this.seq = new Sequencer( this );
 		this.clkReset();
 	}
@@ -663,15 +667,6 @@ class Boot {
 	}
 };
 
-class Manpage {
-	constructor() {
-		this.manFrame = document.getElementById('manpage');
-	}
-	setManpage( app ) {
-		this.manFrame.src = 'man/' + app + '.html';
-	}
-}
-
 class Picker {
 	constructor( os, id = 0 ) {
 		this.os = os;
@@ -692,7 +687,7 @@ class Picker {
 			'fire-away',
 			'hide-n-seek'
 		]
-		doc.setManpage('picker');
+		this.os.doc.setManpage('picker');
 	}
 
 	clockTick() {
@@ -730,8 +725,8 @@ class Picker {
 		switch( label ) {
 		case 'loadPgm':
 			this.os.sysMem = null;
-			this.os.sysMem = new (eval( 'Game' +  this.btnNum ))( this.os, this.btnNum );
-			doc.setManpage( this.pages[ this.btnNum ]);
+			this.os.sysMem = new (eval( GAMES[ this.btnNum ]))( this.os, this.btnNum );
+			this.os.doc.setManpage( this.pages[ this.btnNum ]);
 			break;
 		}
 	}
@@ -741,7 +736,7 @@ class Picker {
 Organ
 */
 
-class Game0 {
+class Organ {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -765,7 +760,7 @@ class Game0 {
 Song Writer
 */
 
-class Game1 {
+class Song_Writer {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -840,7 +835,7 @@ class Game1 {
 Repeat
 */
 
-class Game2 {
+class Repeat {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -937,7 +932,7 @@ class Game2 {
 Torpedo
 */
 
-class Game3 {
+class Torpedo {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1005,7 +1000,7 @@ class Game3 {
 Tag-It
 */
 
-class Game4 {
+class Tag_It {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1098,7 +1093,7 @@ class Game4 {
 Roulette
 */
 
-class Game5 {
+class Roulette {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1155,11 +1150,11 @@ class Game5 {
 Baseball
 */
 
-class Game6 {
+class Baseball {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
-		this.scoreboard = new Baseball( this );
+		this.scoreboard = new Scoreboard( this );
 		this.os.sysMem = this;
 		this.pitchBall = false;
 		this.hit = false;
@@ -1214,7 +1209,7 @@ class Game6 {
 	}
 };
 
-class Baseball{
+class Scoreboard{
 	constructor( game ) {
 		this.game = game;
 		this.outcome = [ 'Triple','Out','Out','Single','Out','Home Run','Out','Out','Single','Out','Double','Out' ];
@@ -1309,7 +1304,7 @@ class Baseball{
 Repeat Plus
 */
 
-class Game7 {
+class Repeat_Plus {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1407,7 +1402,7 @@ class Game7 {
 Treasure Hunt
 */
 
-class Game8 {
+class Treasure_Hunt {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1504,7 +1499,7 @@ class Game8 {
 Compete
 */
 
-class Game9 {
+class Compete {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1637,7 +1632,7 @@ class Game9 {
 Fire Away
 */
 
-class Game10 {
+class Fire_Away {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1657,7 +1652,7 @@ class Game10 {
 Hide'N Seek
 */
 
-class Game11 {
+class Hide_N_Seek {
 	constructor( os, id ) {
 		this.os = os;
 		this.id = id;
@@ -1818,9 +1813,27 @@ class Game11 {
 	}
 }
 
-function init() {
-	printBoard();
-	doc = new Manpage();
+/* -----------------------------------------------------------------------------
+FUNCTION:		IIFE
+DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
+			to the main page.
+----------------------------------------------------------------------------- */
+
+(function() {
+	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
+	var btnNum = 0;
+	var boardHtml = ""
+	for ( c = 0; c < NUM_COLS; c++ ) {
+		boardHtml += '<td align=center>';
+		for ( r = 0; r < NUM_ROWS; r++) {
+			btnNum = r + ( c * NUM_ROWS );
+			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
+			boardHtml += btnTxt[btnNum];
+		}
+		boardHtml += "</td>"
+	}
+
+	document.getElementById("playfield").innerHTML=boardHtml;
+
 	hw = new Tandy12();
-};
-init();
+})();
