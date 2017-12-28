@@ -1,5 +1,10 @@
 TODO:
-	Complete Games:
+	Complete Dynamic Documentation:
+		Torpedo
+		Tag-It
+		Roulette
+		Treasure Hunt
 		Fire Away
+		Hide'N Seek
 
 	Incorporate RequireJS to split various components into different files.

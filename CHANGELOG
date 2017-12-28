@@ -1,44 +1,61 @@
 Version pre-Alpha
+- CHANGES
+	Fire Away
+		Complete initial logic for playable game.
+
+Version pre-Alpha
+- CHANGES
+	Fire Away
+		Added enemy missiles.
+
+Version pre-Alpha
+- CHANGES
+	Fire Away
+		Initial game logic.
+
+Version pre-Alpha
+- CHANGES
+	Updates to Dynamic Documentation
+
+	API Interface and Backend
+		Set all "magic numbers" at top of source file.
+		Correct errors in various documentation comments.
+		Minor optimizations and code cleanup.
+
+Version pre-Alpha
 - CHANGES:
 	Repeat Plus
 		Completed initial game logic.
 
 Version pre-Alpha
-
 - CHANGES:
 	API Interface and Backend
 		Minor change to Picker. Game loading is now delayed to occur after the confirmation "bip".
 
 Version pre-Alpha
-
 - CHANGES
 	Tag-It
 		Completed game logic.
 
 Version pre-Alpha
-
 CHANGES
 	Comments, minor optimizations.
 
 Version pre-Alpha
-
 - CHANGES:
 	Moved introductory documentation to README.
 	Embedded README into introductory documentation iframe.
 
 Version pre-Alpha
-
 - CHANGES:
 	Add/update comments. More to come...
 
 Version pre-Alpha
-
 - CHANGES:
 	Hide'N Seek
 		Complete initial version of game logic.
 
 Version pre-Alpha
-
 - CHANGES:
 	API Interface and Backend
 		Add Tandy12 function to darken all lights.
@@ -49,13 +66,11 @@ Version pre-Alpha
 	Bugfix to prevent oscillator from processing light arrays (only 1 tone at a time will work).
 
 Version pre-Alpha
-
 - CHANGES:
 	API Interface and Backend
 		Add ability to manipulate a group of simultaneous lights.
 
 Version pre-Alpha
-
 - CHANGES:
 	API Interface and Backend
 		Move selection of Flasher mode from OpSys to Flasher.
@@ -66,7 +81,6 @@ Version pre-Alpha
 		Complete majority of game logic.
 
 Version pre-Alpha
-
 - CHANGES:
 	Added mechanisms to:
 		Ensure that only one button can be active at a time.
@@ -84,7 +98,6 @@ Version pre-Alpha
 		Create initial version of game.
 
 Version pre-Alpha
-
 - CHANGES:
 	Added hardware emulation:
 		Buttons
