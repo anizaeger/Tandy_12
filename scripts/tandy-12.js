@@ -1657,9 +1657,23 @@ class Game10 {
 	}
 
 	button( btn, state ) {
-		if ( !state ) {
-			var tmp = this.minMaxDir( btn )
-			alert( 'min: ' + tmp[0] + ', max: ' + tmp[1]);
+		if ( this.sweep ) {
+			if ( this.os.btnCol( btn ) == 2 ) {
+				if ( !state ) {
+					if ( this.target == btn ) {
+						this.hit( btn );
+					} else {
+						var possDir = this.minMaxDir( btn );
+						var dir = this.os.randRange( possDir[0], possDir[1] );
+						var shot = btn - 4 + dir;
+						if ( this.target == shot ) {
+							this.hit( btn );
+						} else {
+							this.miss( btn );
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -1667,8 +1681,10 @@ class Game10 {
 		if ( this.sweep ) {
 			this.advance = !this.advance;
 			if ( this.advance ) {
-				this.os.playBip( this.curBtn, '', true, false );
-
+				if ( ++this.possFire > 1 ) {
+					this.missile = null;
+					this.target = null;
+				}
 				if ( this.ascend ) {
 					this.curBtn++;
 				} else {
@@ -1678,48 +1694,86 @@ class Game10 {
 				if ( this.curBtn <= 0 || this.curBtn >= 3 ) {
 					this.ascend = !this.ascend;
 				}
+				this.os.playBip( this.curBtn, '', true, false );
 			} else {
-				if ( this.os.randRange( 0, 3 ) == this.curBtn ) {
+				if ( this.possFire > 1 && this.os.randRange( 0, 3 ) == this.curBtn ) {
+					this.shots++
+					this.possFire = 0;
 					var possDir = this.minMaxDir( this.curBtn );
 					var dir = this.os.randRange( possDir[0], possDir[1] );
-					var missile = this.curBtn + 4 + dir;
-					this.os.flash( missile, '', 1 );
+					this.missile = this.curBtn + 4 + dir;
+					this.target = this.missile + 4 + dir;
+					this.os.playBip( this.missile, '', true, false );
 				}
+			}
+			if ( this.shots >= 13 ) {
+				this.sweep = false;
+				this.score();
 			}
 		}
 	}
 
 	start() {
 		this.gameOver = false;
-		this.points = [ 0, 0 ];
-		this.run();
-	}
+		this.shots = 0;
+		this.hits = 0;
 
-	run() {
-		this.ascend = true;
-		this.curBtn = 0;
-		this.steps = 0;
-		this.sweep = true;
+		this.curBtn = 1;
 		this.advance = true;
-		this.player = null;
-		this.hit = null;
-		this.winner = null;
+		this.ascend = false;
+		this.possFire = 0;
+
+		this.sweep = true;
 	}
 
 	minMaxDir( btn ) {
-		var min = 0;
-		var max = 0;
-		if ( this.os.btnRow( btn ) <= 1 ) {
-			max = 1;
-		} else {
-			min = -1;
+		var min = -1;
+		var max = 1;
+
+		var btnRow = this.os.btnRow( btn );
+		var btnCol = this.os.btnCol( btn );
+
+		if ( btnCol == 0 ) {
+			if ( btnRow <= 1 ) {
+				min = 0;
+			} else {
+				max = 0;
+			}
+		} else if ( btnCol == 2 ) {
+			if ( btnRow == 0 ) {
+				min = 0;
+			} else if ( btnRow == 3 ) {
+				max = 0;
+			}
 		}
 		return [ min, max ];
 	}
 
-	fire( btn ) {
-		var minMaxDir = this.minMaxDir( btn );
-		this.dir = this.os.randRange( minMaxDir[0], minMaxDir[1]);
+	hit( btn ) {
+		this.os.playBip( btn, '', true, false );
+		this.hits++
+	}
+
+	miss( btn ) {
+		this.os.playBip( btn, '', true, true );
+	}
+
+	score() {
+		if ( this.hits == 0 ) {
+			
+		} else if ( this.hits == 13 ) {
+			
+		} else {
+			this.os.flash( this.hits - 1, 'score', 3, true, false );
+		}
+	}
+
+	endSeq( label ) {
+		switch( label ) {
+		case 'score':
+			this.os.selectPgm( this.id );
+			break;
+		}
 	}
 };
 
