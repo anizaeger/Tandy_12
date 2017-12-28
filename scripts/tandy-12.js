@@ -1642,6 +1642,7 @@ class Game10 {
 		this.os = os;
 		this.id = id;
 		this.os.sysMem = this;
+		this.start();
 	}
 
 	btnClick( btnName ) {
@@ -1660,6 +1661,49 @@ class Game10 {
 			var tmp = this.minMaxDir( btn )
 			alert( 'min: ' + tmp[0] + ', max: ' + tmp[1]);
 		}
+	}
+
+	clockTick() {
+		if ( this.sweep ) {
+			this.advance = !this.advance;
+			if ( this.advance ) {
+				this.os.playBip( this.curBtn, '', true, false );
+
+				if ( this.ascend ) {
+					this.curBtn++;
+				} else {
+					this.curBtn--;
+				}
+
+				if ( this.curBtn <= 0 || this.curBtn >= 3 ) {
+					this.ascend = !this.ascend;
+				}
+			} else {
+				if ( this.os.randRange( 0, 3 ) == this.curBtn ) {
+					var possDir = this.minMaxDir( this.curBtn );
+					var dir = this.os.randRange( possDir[0], possDir[1] );
+					var missile = this.curBtn + 4 + dir;
+					this.os.flash( missile, '', 1 );
+				}
+			}
+		}
+	}
+
+	start() {
+		this.gameOver = false;
+		this.points = [ 0, 0 ];
+		this.run();
+	}
+
+	run() {
+		this.ascend = true;
+		this.curBtn = 0;
+		this.steps = 0;
+		this.sweep = true;
+		this.advance = true;
+		this.player = null;
+		this.hit = null;
+		this.winner = null;
 	}
 
 	minMaxDir( btn ) {
