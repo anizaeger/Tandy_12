@@ -1124,7 +1124,7 @@ class Roulette {
 				}
 				this.os.flasher = true;
 				this.os.clear();
-				this.os.blast( this.wheel[ this.idx ], true);
+				this.os.blast( this.wheel[ this.idx ], true, true, false );
 			} else {
 				this.os.flash( this.wheel[ this.idx ], 'gameOver', 3 );
 				this.btnEnable = true;
@@ -1141,6 +1141,11 @@ class Roulette {
 	}
 
 	endSeq( label ) {
+		switch( label ) {
+		case 'gameOver':
+			this.os.blast( this.wheel[ this.idx ], true, true, false );
+			break;
+		}
 		this.btnEnable = true;
 	}
 
