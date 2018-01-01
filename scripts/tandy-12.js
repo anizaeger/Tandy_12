@@ -29,7 +29,7 @@
 */
 
 // Program to launch upon powering up Tandy--12
-const STARTUP_PROG = 'Picker';
+const STARTUP_PROG = 'Boot';
 
 const GAMES = [
 	'Organ',
