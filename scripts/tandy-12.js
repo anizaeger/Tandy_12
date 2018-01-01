@@ -50,6 +50,7 @@ const NUM_COLS = 3;
 
 var CONFIG;
 var hw;
+var clock;
 var DEBUG;
 
 /* -----------------------------------------------------------------------------
@@ -90,17 +91,21 @@ class Manpage {
 
 class Config {
 	constructor() {
-		this.clockRate = null;
-		this._clockMin = 125;
-		this._clockMax = 1000;
+		this._clockMinHz = .5;
+		this._clockMaxHz = 8;
+		this._clockDefHz = 2;
 	}
 
-	getClockMin() {
-		return this._clockMin;
+	getClockHzMin() {
+		return this._clockMinHz;
 	}
 
-	getClockMax() {
-		return this._clockMax;
+	getClockHzMax() {
+		return this._clockMaxHz;
+	}
+
+	getClockHzDef() {
+		return this._clockDefHz;
 	}
 }
 
@@ -113,7 +118,7 @@ class Tandy12 {
 	constructor() {
 		this.clock = new Clock( this );
 		this.osc = new Osc();
-		this.power = null;
+		this.power = false;
 		this.os = null;
 		this.doc = new Manpage();
 
@@ -121,7 +126,6 @@ class Tandy12 {
 		for ( var light = 0; light < NUM_BTNS; light++ ) {
 			this.lights[ light ] = new Light( this, light );
 		}
-
 
 		this.flasher = new Flasher( this );
 
@@ -357,6 +361,51 @@ class Clock {
 		this.hw = hw;
 		this.timeStamp = 0;
 		this.timer = null;
+
+		this.clockRgbMin = '#ff0000';
+		this.clockRgbMax = '#00ff00';
+
+		this.clockHz = document.getElementById("clockHz");
+		this.clockMs = document.getElementById("clockMs");
+		this.clockslide = document.getElementById("clockSlider");
+
+		this.clockHzMin = CONFIG.getClockHzMin();
+		this.clockHzMax = CONFIG.getClockHzMax();
+
+		this.clockMsMin = this.hzToMs( this.clockHzMax );
+		this.clockMsMax = this.hzToMs( this.clockHzMin );
+		this.clockMs.min = this.clockMsMin;
+		this.clockMs.max = this.clockMsMax;
+
+		// Represent slider as percentages.
+		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * 10000 )
+		this.clockslide.min = minPcnt;
+		this.clockslide.max = 10000;
+
+		document.getElementById("clockHzMin").innerHTML = this.clockHzMin + 'hz';
+		document.getElementById("clockHzMax").innerHTML = this.clockHzMax + 'hz';
+
+		this.default();
+	}
+
+	ratioToHz( ratio ) {
+		return (( this.clockHzMax ) * ratio );
+	}
+
+	msToHz( msec ) {
+		return Math.round(msec / ( 1 / 1000 ));
+	}
+
+	hzToMs( hz ) {
+		return (( 1 / hz ) * 1000 );
+	}
+
+	msToRatio( msec ) {
+		return Math.round(( msec / this.clockMsMax ) * 10000 );
+	}
+
+	hzToRatio( hz ) {
+		return Math.round(( hz / this.clockHzMax ) * 10000 );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -365,7 +414,7 @@ class Clock {
 	----------------------------------------------------------------------------- */
 	reset() {
 		this.stop();
-		this.tick();
+		this.start();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -375,11 +424,13 @@ class Clock {
 	----------------------------------------------------------------------------- */
 	tick() {
 		this.hw.clockTick( this.timeStamp++ );
+	}
 
-		var tmpThis = this;
-		this.timer = setTimeout( function() {
-			tmpThis.tick();
-		}, CONFIG.clockRate );
+	start() {
+		if ( this.hw.power ) {
+			this.stop();
+			this.run();
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -387,7 +438,61 @@ class Clock {
 	DESCRIPTION:		Stop clock.
 	----------------------------------------------------------------------------- */
 	stop() {
-		clearTimeout( this.timer );
+		if ( this.hw.power ) {
+			clearTimeout( this.timer );
+		}
+	}
+
+	advance() {
+		if ( this.hw.power ) {
+			this.stop();
+			this.tick();
+		}
+	}
+
+	run() {
+		this.tick();
+		var tmpThis = this;
+		this.timer = setTimeout( function() {
+			tmpThis.run();
+		}, this.clockRate );
+	}
+
+	set() {
+		var msec = this.clockMs.value;
+		if ( msec >= this.clockMsMin && msec <= this.clockMsMax ) {
+			var hz = this.msToHz( msec );
+			var ratio = this.hzToRatio( hz );
+			this.clockslide.value = ratio;
+			this.adjust();
+		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::Adjust
+	DESCRIPTION:		Accepts percentage from slider, and converts it to
+				milliseconds.
+	----------------------------------------------------------------------------- */
+	adjust() {
+		// Value of slider as a decimal.
+		var ratio = this.clockslide.value / 10000;
+		var dispPcnt = Math.round( ratio * 10000 ) / 100;
+
+		var newHz = Math.round( this.ratioToHz( ratio ) * 100 ) / 100;
+		var newMs = Math.round( this.hzToMs( newHz ));
+
+		this.clockslide.style.backgroundColor = this.hw.shadeBlend( ratio, this.clockRgbMin,this.clockRgbMax );
+
+		this.clockHz.innerHTML = newHz + 'hz';
+		this.clockMs.value = newMs;
+
+		document.getElementById("clockPcnt").innerHTML = dispPcnt + '%';
+		this.clockRate = newMs;
+	}
+
+	default() {
+		this.clockslide.value = 2500;
+		this.adjust();
 	}
 };
 
@@ -1976,51 +2081,6 @@ class Hide_N_Seek {
 class Debug{
 	constructor( hw ) {
 		this.hw = hw;
-		this.clockslide = document.getElementById("clockSlider")
-
-		this.clockMin = CONFIG.getClockMin();
-		this.clockMax = CONFIG.getClockMax();
-
-		this.clockslide.min = this.clockMin;
-		this.clockslide.max = this.clockMax;
-
-		var clockMinHz = ( 1 / ( this.clockMax / 1000 ));
-		var clockMaxHz = ( 1 / ( this.clockMin / 1000 ));
-
-		clockMinHz = Math.round( clockMinHz * 100 ) / 100;
-		clockMaxHz = Math.round( clockMaxHz * 100 ) / 100;
-
-		document.getElementById("clockMin").innerHTML = clockMinHz + 'hz';
-		document.getElementById("clockMax").innerHTML = clockMaxHz + 'hz';
-
-		this.clockMinColor = '#00ff00';
-		this.clockMaxColor = '#ff0000';
-
-		this.doClockReset();
-	}
-
-	doClockSlide() {
-		// Timer timeout in milliseconds
-		var clockTime = this.clockslide.value;
-
-		// Clockrate in Hz
-		var clockrate = ( 1 / ( clockTime / 1000 ));
-		clockrate = Math.round( clockrate * 100 ) / 100;
-
-		// Ratio and percentage of timeout value to clockMax
-		var ratio = clockTime / this.clockslide.max;
-		var percentage = Math.round( ratio * 10000 ) / 100;
-
-		var bgColor = this.hw.shadeBlend( ratio, this.clockMinColor,this.clockMaxColor );
-		this.clockslide.style.backgroundColor = bgColor;
-		document.getElementById("clockrate").innerHTML = clockrate + 'hz';
-		document.getElementById("clockPcnt").innerHTML = percentage + '%';
-		CONFIG.clockRate = clockTime;
-	}
-
-	doClockReset() {
-		this.clockslide.value = this.clockMax / 2;
-		this.doClockSlide();
 	}
 };
 
@@ -2066,6 +2126,6 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 
 	CONFIG = new Config();
 	hw = new Tandy12();
-	DEBUG = new Debug( hw );
+	clock = hw.clock;
 })();
 

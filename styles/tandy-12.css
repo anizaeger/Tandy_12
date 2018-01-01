@@ -103,7 +103,6 @@ width: 100%; /* Width of the outside container */
 
 /* The slider itself */
 .clockSlide {
-	transform: rotateY(180deg);
 	-webkit-appearance: none;  /* Override default CSS styles */
 	appearance: none;
 	width: 100%; /* Full-width */
