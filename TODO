@@ -1,10 +1,5 @@
 TODO:
-	Complete Games:
-		Tag-It
-		Repeat Plus
-		Treasure Hunt
-		Compete
-		Fire Away
-		Hide'N Seek
+	Hide'N Seek
+		- Rewrite game mechanics to track the number of correct matches and numbers as each button is released.
 
 	Incorporate RequireJS to split various components into different files.
