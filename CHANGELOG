@@ -1,124 +1,20 @@
-Version pre-Alpha
-- CHANGES
-	Complete initial Dynamic Documentation
+Version 1.1.0-alpha
 
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Complete initial logic for playable game.
+	API and Backend
+		- Add debugging features.
 
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Added enemy missiles.
+	Debug
+		- Select bootup program via dropdown menu.
+		- Range input to adjust clock rate.
 
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Initial game logic.
+Version 1.0.0-alpha
 
-Version pre-Alpha
-- CHANGES
-	Updates to Dynamic Documentation
+	API and Backend
+		- Move shadeBlend from Lights class to Tandy12 Class to more easily allow its use within other classes.
+		- Optimize sequencer.  Items in excess of Sequencer::MAXLEN will be truncated from the beginning of the sequence.  Interface added to OpSys for new features.
 
-	API Interface and Backend
-		Set all "magic numbers" at top of source file.
-		Correct errors in various documentation comments.
-		Minor optimizations and code cleanup.
+	Boot
+		- Re-write bootup program to utilize Sequencer.
 
-Version pre-Alpha
-- CHANGES:
-	Repeat Plus
-		Completed initial game logic.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Minor change to Picker. Game loading is now delayed to occur after the confirmation "bip".
-
-Version pre-Alpha
-- CHANGES
-	Tag-It
-		Completed game logic.
-
-Version pre-Alpha
-CHANGES
-	Comments, minor optimizations.
-
-Version pre-Alpha
-- CHANGES:
-	Moved introductory documentation to README.
-	Embedded README into introductory documentation iframe.
-
-Version pre-Alpha
-- CHANGES:
-	Add/update comments. More to come...
-
-Version pre-Alpha
-- CHANGES:
-	Hide'N Seek
-		Complete initial version of game logic.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Add Tandy12 function to darken all lights.
-		Add/update documentation comments.
-		Rename Hardware class to Tandy12
-
-- BUGFIXS:
-	Bugfix to prevent oscillator from processing light arrays (only 1 tone at a time will work).
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Add ability to manipulate a group of simultaneous lights.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Move selection of Flasher mode from OpSys to Flasher.
-		Begin standardization of A/V interface in OpSys.
-		Allow Sequencer to create sequences of only light or sound.
-
-	Treasure Hunt
-		Complete majority of game logic.
-
-Version pre-Alpha
-- CHANGES:
-	Added mechanisms to:
-		Ensure that only one button can be active at a time.
-		Allow sequencer to sequence either just lights or just tones, in addition to both.
-		Generate "Bips" with lights, tones, or both.
-
-	Song-Writer
-		START button now clears stored sequences.
-
-	Torpedo
-		START button now starts a new game.
-		Game no longer exits to picker at conclusion.
-
-	Treasure Hunt
-		Create initial version of game.
-
-Version pre-Alpha
-- CHANGES:
-	Added hardware emulation:
-		Buttons
-		Lights
-		Clock
-		Flasher
-		Tone Oscillator
-
-	Added Operating System:
-		Tone Sequencer
-		Bootup Animation
-		Application Picker
-
-	Added Games:
-		Organ
-		Song Writer
-		Repeat
-		Torpedo
-		Roulette
-		Baseball
+	Song Writer
+		- Minor code change to take advantage of updates to Sequencer.

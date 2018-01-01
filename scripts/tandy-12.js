@@ -28,9 +28,6 @@
 *
 */
 
-// Program to launch upon powering up Tandy--12
-const STARTUP_PROG = 'Boot';
-
 const PROGS = [
 	'Organ',
 	'Song_Writer',
@@ -51,7 +48,9 @@ const NUM_BTNS = 12;
 const NUM_ROWS = 4;
 const NUM_COLS = 3;
 
+var CONFIG;
 var hw;
+var DEBUG;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -86,6 +85,22 @@ class Manpage {
 	}
 	setManpage( app ) {
 		this.manFrame.src = 'man/' + app + '.html';
+	}
+};
+
+class Config {
+	constructor() {
+		this.clockRate = null;
+		this._clockMin = 125;
+		this._clockMax = 1000;
+	}
+
+	getClockMin() {
+		return this._clockMin;
+	}
+
+	getClockMax() {
+		return this._clockMax;
 	}
 }
 
@@ -252,7 +267,7 @@ class Tandy12 {
 			return "#" + ( 0x1000000 + ( u ((( t >> 16 ) - R1 ) * n ) + R1 ) * 0x10000 + ( u((( t >> 8 & 0x00FF ) - G1 ) * n ) + G1 ) * 0x100 + ( u ((( t & 0x0000FF ) - B1 ) * n ) + B1 )).toString(16).slice(1);
 		}
 	}
-}
+};
 
 /* -----------------------------------------------------------------------------
 CLASS:			Light
@@ -364,7 +379,7 @@ class Clock {
 		var tmpThis = this;
 		this.timer = setTimeout( function() {
 			tmpThis.tick();
-		}, 500);
+		}, CONFIG.clockRate );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -567,7 +582,7 @@ class OpSys {
 		this.doc = doc;
 		this.timeStamp = null;
 		this.seq = new Sequencer( this );
-		this.sysMem = new ( eval( STARTUP_PROG ))( this );
+		this.sysMem = new ( eval( this.getBootProg()))( this );
 	}
 
 	clockTick( timeStamp ) {
@@ -582,6 +597,12 @@ class OpSys {
 
 	clkReset() {
 		this.hw.clock.reset();
+	}
+
+	getBootProg() {
+		var bootProg = document.getElementById('STARTUP_PROG');
+		var progName = bootProg.options[bootProg.selectedIndex].value;
+		return progName;
 	}
 
 	selectPgm( id ) {
@@ -1312,7 +1333,7 @@ class Scoreboard{
 		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
 		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
 	}
-}
+};
 
 /*
 Repeat Plus
@@ -1508,7 +1529,7 @@ class Treasure_Hunt {
 	loss() {
 		this.os.seqLoad( this.seq, 'gameOver', true, false );
 	}
-}
+};
 
 /*
 Compete
@@ -1950,7 +1971,58 @@ class Hide_N_Seek {
 	loss() {
 		this.os.seqLoad( this.seq, 'gameOver' );
 	}
-}
+};
+
+class Debug{
+	constructor( hw ) {
+		this.hw = hw;
+		this.clockslide = document.getElementById("clockSlider")
+
+		this.clockMin = CONFIG.getClockMin();
+		this.clockMax = CONFIG.getClockMax();
+
+		this.clockslide.min = this.clockMin;
+		this.clockslide.max = this.clockMax;
+
+		var clockMinHz = ( 1 / ( this.clockMax / 1000 ));
+		var clockMaxHz = ( 1 / ( this.clockMin / 1000 ));
+
+		clockMinHz = Math.round( clockMinHz * 100 ) / 100;
+		clockMaxHz = Math.round( clockMaxHz * 100 ) / 100;
+
+		document.getElementById("clockMin").innerHTML = clockMinHz + 'hz';
+		document.getElementById("clockMax").innerHTML = clockMaxHz + 'hz';
+
+		this.clockMinColor = '#00ff00';
+		this.clockMaxColor = '#ff0000';
+
+		this.doClockReset();
+	}
+
+	doClockSlide() {
+		// Timer timeout in milliseconds
+		var clockTime = this.clockslide.value;
+
+		// Clockrate in Hz
+		var clockrate = ( 1 / ( clockTime / 1000 ));
+		clockrate = Math.round( clockrate * 100 ) / 100;
+
+		// Ratio and percentage of timeout value to clockMax
+		var ratio = clockTime / this.clockslide.max;
+		var percentage = Math.round( ratio * 10000 ) / 100;
+
+		var bgColor = this.hw.shadeBlend( ratio, this.clockMinColor,this.clockMaxColor );
+		this.clockslide.style.backgroundColor = bgColor;
+		document.getElementById("clockrate").innerHTML = clockrate + 'hz';
+		document.getElementById("clockPcnt").innerHTML = percentage + '%';
+		CONFIG.clockRate = clockTime;
+	}
+
+	doClockReset() {
+		this.clockslide.value = this.clockMax / 2;
+		this.doClockSlide();
+	}
+};
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
@@ -1962,6 +2034,24 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
 	var btnNum = 0;
 	var boardHtml = ""
+
+	// Generate Debugging Interface
+	var progs = [
+		'Boot',
+		'Picker'
+	]
+
+	progs = progs.concat( PROGS );
+
+	var dbgBootprog = document.getElementById('STARTUP_PROG');
+
+	for ( var progIdx = 0; progIdx < progs.length; progIdx++ ) {
+		var opt = document.createElement("option");
+		opt.text = progs[ progIdx ];
+		dbgBootprog.add( opt );
+	}
+
+	// Generate Main Console
 	for ( c = 0; c < NUM_COLS; c++ ) {
 		boardHtml += '<td align=center>';
 		for ( r = 0; r < NUM_ROWS; r++) {
@@ -1974,5 +2064,8 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 
 	document.getElementById("playfield").innerHTML=boardHtml;
 
+	CONFIG = new Config();
 	hw = new Tandy12();
+	DEBUG = new Debug( hw );
 })();
+
