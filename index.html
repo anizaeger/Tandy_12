@@ -8,23 +8,84 @@
 	<title>Tandy 12</title>
 </head>
 <body style="margin:0px;padding:0px">
-	<table width=100%>
-		<tr>
-			<td style="width:400px">
+	<div class="wrapper">
+		<!-- BEGIN Debugging Interface -->
+		<div class="content left">
+			STARTUP_PROG: <select id="STARTUP_PROG"></select>
+			<table width=100% border=0>
+				<tr>
+					<td />
+					<td align=center>
+						Clock Rate(Hz)
+					</td>
+					<td />
+				</tr>
+				<tr>
+					<td align=right>
+						<span id='clockHzMin'></span>
+					</td>
+					<td>
+						<div class="slidecontainer">
+							<input type="range" class="clockSlide" id="clockSlider" oninput="clock.adjust()"/>
+						</div>
+					</td>
+					<td>
+						<span id='clockHzMax'></span>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						mSec:
+						<input type=number id='clockMs' /><button onclick="clock.set()">Set</button>
+					</td>
+					<td align=center>
+						<span id='clockPcnt'></span> - <span id='clockHz'></span>
+					</td>
+					<td>
+						<button onclick="clock.default()">Reset</button>
+					</td>
+				</tr>
+				<tr>
+					<td />
+					<td align=center>
+						<button onclick="clock.stop()">&#x25A0;</button>
+						<button onclick="clock.advance()">&#x25AE;&#x25B6;</button>
+						<button onclick="clock.start()">&#x25B6;</button>
+					</td>
+					<td />
+				</tr>
+			</table>
+		</div>
+		<!-- END Debugging Interface -->
+
+		<!-- BEGIN Console -->
+		<div class="content center">
+			<span class="console">
 				<table>
+					<!-- BEGIN Upper Buttons and Power Switch -->
 					<tr>
 						<td align=center>
 							<button onclick="hw.click('space')">SPACE-2</button>
 							OFF
 							<label class="switch">
 								<input type="checkbox" id="switch" onchange="hw.setPower()">
-								<span class="slider round"></span>
+								<span class="toggle round"></span>
 							</label>
 							ON
 							<button onclick="hw.click('repeat')">REPEAT-2</button>
 						</td>
 					</tr>
-					<tr><td><table id="playfield"></table></td></tr>
+					<!-- END Upper Buttons and Power Switch -->
+
+					<!-- BEGIN Main Buttons -->
+					<tr>
+						<td>
+							<table id="playfield">&nbsp;</table>
+						</td>
+					</tr>
+					<!-- END Main Buttons -->
+
+					<!-- BEGIN Lower Buttons -->
 					<tr>
 						<td align=center colspan=3>
 							<button onclick="hw.click('start')">START/PITCH-7</button>
@@ -32,28 +93,36 @@
 							<button onclick="hw.click('playhit')">PLAY-2/HIT-7</button>
 						</td>
 					</tr>
+					<!-- END Lower Buttons -->
 				</table>
-			</td>
-			<td valign=top>
-				<div style='position: relative; width: 100%; height: 0px; padding-bottom: 60%;'>
-					<iframe id='manpage' src='about:blank' style='position: absolute; height: 100%; width: 100%; border: none;'></iframe>
-				</div>
-			</td>
-		</tr>
-	</table>
+			</span>
+		</div>
+		<!-- END Console -->
+
+		<!-- BEGIN Dynamic Documentation -->
+		<div class="content right">
+			<div style='position: relative; width: 100%; height: 0px; padding-bottom: 60%;'>
+				<iframe id='manpage' src='about:blank' style='position: absolute; height: 100%; width: 100%; border: none;'></iframe>
+			</div>
+		</div>
+		<!-- END Dynamic Documentation -->
+	</div>
+
+	<!-- BEGIN Copyright Footer -->
 	<table width=100%>
 		<tr>
 			<td width=50%>
-				<button onclick="gplAlert()">About</button><br />
 				Brought to you by:<br />
-				NYFnet Enterprises
+				NYFnet Enterprises<br />
+				<button onclick="gplAlert()">About</button>
 			</td>
-			<td width=50%>
+			<td width=50% align=right>
 				<a href="about/licenses.html" rel="jslicense">JavaScript license information</a><br />
 				&#169;2017 <a href="mailto:anizaeger@nyfnet.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
 				<a href=#top>Back to Top</a>
 			</td>
 		</tr>
 	</table>
+	<!-- END Copyright Footer -->
 </body>
 </html>

@@ -28,9 +28,6 @@
 *
 */
 
-// Program to launch upon powering up Tandy--12
-const STARTUP_PROG = 'Boot';
-
 const PROGS = [
 	'Organ',
 	'Song_Writer',
@@ -51,7 +48,10 @@ const NUM_BTNS = 12;
 const NUM_ROWS = 4;
 const NUM_COLS = 3;
 
+var CONFIG;
 var hw;
+var clock;
+var DEBUG;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -87,6 +87,31 @@ class Manpage {
 	setManpage( app ) {
 		this.manFrame.src = 'man/' + app + '.html';
 	}
+};
+
+class Config {
+	constructor() {
+		this._clockHzMin = .5;
+		this._clockHzMax = 8;
+		this._clockHzDef = 2;
+		this._clockPrec = 10000;
+	}
+
+	getClockHzMin() {
+		return this._clockHzMin;
+	}
+
+	getClockHzMax() {
+		return this._clockHzMax;
+	}
+
+	getClockHzDef() {
+		return this._clockHzDef;
+	}
+
+	getClockPrec() {
+		return this._clockPrec;
+	}
 }
 
 /* -----------------------------------------------------------------------------
@@ -98,7 +123,7 @@ class Tandy12 {
 	constructor() {
 		this.clock = new Clock( this );
 		this.osc = new Osc();
-		this.power = null;
+		this.power = false;
 		this.os = null;
 		this.doc = new Manpage();
 
@@ -106,7 +131,6 @@ class Tandy12 {
 		for ( var light = 0; light < NUM_BTNS; light++ ) {
 			this.lights[ light ] = new Light( this, light );
 		}
-
 
 		this.flasher = new Flasher( this );
 
@@ -252,7 +276,7 @@ class Tandy12 {
 			return "#" + ( 0x1000000 + ( u ((( t >> 16 ) - R1 ) * n ) + R1 ) * 0x10000 + ( u((( t >> 8 & 0x00FF ) - G1 ) * n ) + G1 ) * 0x100 + ( u ((( t & 0x0000FF ) - B1 ) * n ) + B1 )).toString(16).slice(1);
 		}
 	}
-}
+};
 
 /* -----------------------------------------------------------------------------
 CLASS:			Light
@@ -342,6 +366,52 @@ class Clock {
 		this.hw = hw;
 		this.timeStamp = 0;
 		this.timer = null;
+
+		this.clockRgbMin = '#ff0000';
+		this.clockRgbMax = '#00ff00';
+
+		this.clockHz = document.getElementById("clockHz");
+		this.clockMs = document.getElementById("clockMs");
+		this.clockslide = document.getElementById("clockSlider");
+
+		this.clockHzMin = CONFIG.getClockHzMin();
+		this.clockHzMax = CONFIG.getClockHzMax();
+		this.clockPrcn = CONFIG.getClockPrec();
+
+		this.clockMsMin = this.hzToMs( this.clockHzMax );
+		this.clockMsMax = this.hzToMs( this.clockHzMin );
+		this.clockMs.min = this.clockMsMin;
+		this.clockMs.max = this.clockMsMax;
+
+		// Represent slider as percentages.
+		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * this.clockPrcn );
+		this.clockslide.min = minPcnt;
+		this.clockslide.max = 10000;
+
+		document.getElementById("clockHzMin").innerHTML = this.clockHzMin + 'hz';
+		document.getElementById("clockHzMax").innerHTML = this.clockHzMax + 'hz';
+
+		this.default();
+	}
+
+	ratioToHz( ratio ) {
+		return ( this.clockHzMax  * ratio );
+	}
+
+	msToHz( ms ) {
+		return 1000 / ms;
+	}
+
+	hzToMs( hz ) {
+		return Math.round( 1000 / hz );
+	}
+
+	msToRatio( ms ) {
+		return ( ms / this.clockMsMax ) * 10000;
+	}
+
+	hzToRatio( hz ) {
+		return ( hz / this.clockHzMax ) * 10000;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -350,7 +420,7 @@ class Clock {
 	----------------------------------------------------------------------------- */
 	reset() {
 		this.stop();
-		this.tick();
+		this.start();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -360,11 +430,13 @@ class Clock {
 	----------------------------------------------------------------------------- */
 	tick() {
 		this.hw.clockTick( this.timeStamp++ );
+	}
 
-		var tmpThis = this;
-		this.timer = setTimeout( function() {
-			tmpThis.tick();
-		}, 500);
+	start() {
+		if ( this.hw.power ) {
+			this.stop();
+			this.run();
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -372,7 +444,63 @@ class Clock {
 	DESCRIPTION:		Stop clock.
 	----------------------------------------------------------------------------- */
 	stop() {
-		clearTimeout( this.timer );
+		if ( this.hw.power ) {
+			clearTimeout( this.timer );
+		}
+	}
+
+	advance() {
+		if ( this.hw.power ) {
+			this.stop();
+			this.tick();
+		}
+	}
+
+	run() {
+		this.tick();
+		var tmpThis = this;
+		this.timer = setTimeout( function() {
+			tmpThis.run();
+		}, this.clockRate );
+	}
+
+	set() {
+		var ms = this.clockMs.value;
+		if ( ms >= this.clockMsMin && ms <= this.clockMsMax ) {
+			var hz = this.msToHz( ms );
+			var ratio = this.hzToRatio( hz );
+			this.clockslide.value = ratio;
+			this.adjust();
+		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::Adjust
+	DESCRIPTION:		Accepts percentage from slider, and converts it to
+				milliseconds.
+	----------------------------------------------------------------------------- */
+	adjust() {
+		// Value of slider as a decimal.
+		var ratio = this.clockslide.value / 10000;
+		var dispPcnt = Math.round( ratio * 10000 ) / 100;
+
+		var newHz = Math.round( this.ratioToHz( ratio ) * 100 ) / 100;
+		var newMs = Math.round( this.hzToMs( newHz ));
+
+		this.clockslide.style.backgroundColor = this.hw.shadeBlend( ratio, this.clockRgbMin,this.clockRgbMax );
+
+		this.clockHz.innerHTML = newHz + 'hz';
+		this.clockMs.value = newMs;
+
+		document.getElementById("clockPcnt").innerHTML = dispPcnt + '%';
+		this.clockRate = newMs;
+	}
+
+	default() {
+		var ms = this.hzToMs( CONFIG.getClockHzDef());
+		var ratio = this.msToRatio( ms )
+		this.clockslide.value = ratio;
+		this.adjust();
 	}
 };
 
@@ -567,7 +695,7 @@ class OpSys {
 		this.doc = doc;
 		this.timeStamp = null;
 		this.seq = new Sequencer( this );
-		this.sysMem = new ( eval( STARTUP_PROG ))( this );
+		this.sysMem = new ( eval( this.getBootProg()))( this );
 	}
 
 	clockTick( timeStamp ) {
@@ -582,6 +710,12 @@ class OpSys {
 
 	clkReset() {
 		this.hw.clock.reset();
+	}
+
+	getBootProg() {
+		var bootProg = document.getElementById('STARTUP_PROG');
+		var progName = bootProg.options[bootProg.selectedIndex].value;
+		return progName;
 	}
 
 	selectPgm( id ) {
@@ -1312,7 +1446,7 @@ class Scoreboard{
 		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
 		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
 	}
-}
+};
 
 /*
 Repeat Plus
@@ -1508,7 +1642,7 @@ class Treasure_Hunt {
 	loss() {
 		this.os.seqLoad( this.seq, 'gameOver', true, false );
 	}
-}
+};
 
 /*
 Compete
@@ -1950,7 +2084,13 @@ class Hide_N_Seek {
 	loss() {
 		this.os.seqLoad( this.seq, 'gameOver' );
 	}
-}
+};
+
+class Debug{
+	constructor( hw ) {
+		this.hw = hw;
+	}
+};
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
@@ -1962,6 +2102,24 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
 	var btnNum = 0;
 	var boardHtml = ""
+
+	// Generate Debugging Interface
+	var progs = [
+		'Boot',
+		'Picker'
+	]
+
+	progs = progs.concat( PROGS );
+
+	var dbgBootprog = document.getElementById('STARTUP_PROG');
+
+	for ( var progIdx = 0; progIdx < progs.length; progIdx++ ) {
+		var opt = document.createElement("option");
+		opt.text = progs[ progIdx ];
+		dbgBootprog.add( opt );
+	}
+
+	// Generate Main Console
 	for ( c = 0; c < NUM_COLS; c++ ) {
 		boardHtml += '<td align=center>';
 		for ( r = 0; r < NUM_ROWS; r++) {
@@ -1974,5 +2132,8 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 
 	document.getElementById("playfield").innerHTML=boardHtml;
 
+	CONFIG = new Config();
 	hw = new Tandy12();
+	clock = hw.clock;
 })();
+
