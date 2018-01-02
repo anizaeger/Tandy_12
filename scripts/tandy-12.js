@@ -2125,7 +2125,7 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		for ( r = 0; r < NUM_ROWS; r++) {
 			btnNum = r + ( c * NUM_ROWS );
 			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += btnTxt[btnNum];
+			boardHtml += '<span class="btnText">' + btnTxt[btnNum] + '</span>';
 		}
 		boardHtml += "</td>"
 	}

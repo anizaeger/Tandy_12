@@ -3,9 +3,39 @@ div.btnMain {
 	height:133px;
 	background: url(../images/lg-btn.png);
 	background-size: 113px 133px;
+	color: white;
 	display: table-cell;
 	vertical-align: bottom;
 	text-align: right;
+}
+
+.controls {
+	display:table;
+}
+
+.btnGrp {
+	display: table-cell;
+	vertical-align: middle;
+	width: 99px;
+	font-size:10pt;
+}
+
+.upper.btnAux {
+	background-color: orange;
+}
+
+.lower.btnAux {
+	background-color: brown;
+}
+
+.btnAux {
+	height: 33px;
+	width: 33px;
+	border-radius:11px;
+}
+
+.btnText {
+	color: white;
 }
 
 /* The switch - the box around the slider */
@@ -77,15 +107,15 @@ input:checked + .toggle:before {
 .content {
 	vertical-align: top;
 }
-.left {
+.content.left {
 	display:table-cell;
 	width:50%;
 }
-.right {
+.content.right {
 	display:table-cell;
 	width:50%;
 }
-.center {
+.content.center {
 	display:table-cell;
 }
 .center span.console {

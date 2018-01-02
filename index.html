@@ -59,43 +59,66 @@
 		<!-- END Debugging Interface -->
 
 		<!-- BEGIN Console -->
-		<div class="content center">
-			<span class="console">
-				<table>
-					<!-- BEGIN Upper Buttons and Power Switch -->
-					<tr>
-						<td align=center>
-							<button onclick="hw.click('space')">SPACE-2</button>
-							OFF
-							<label class="switch">
-								<input type="checkbox" id="switch" onchange="hw.setPower()">
-								<span class="toggle round"></span>
-							</label>
-							ON
-							<button onclick="hw.click('repeat')">REPEAT-2</button>
-						</td>
-					</tr>
-					<!-- END Upper Buttons and Power Switch -->
+		<div class="content center" style="background-color:tan;">
+			<center>
+				<span class="console">
+					<table width=95%>
+						<!-- BEGIN Upper Buttons and Power Switch -->
+						<tr>
+							<td align=center>
+								<div class="controls">
+									<div class="btnGrp">
+										<button class="upper btnAux" onclick="hw.click('space')"></button><br />
+										SPACE-2
+									</div>
+									<div class="btnGrp">
+										OFF
+										<label class="switch">
+											<input type="checkbox" id="switch" onchange="hw.setPower()">
+											<span class="toggle round"></span>
+										</label>
+										ON
+									</div>
+									<div class="btnGrp">
+										<button class="upper btnAux" onclick="hw.click('repeat')"></button><br />
+										REPEAT-2
+									</div>
+								</div>
+							</td>
+						</tr>
+						<!-- END Upper Buttons and Power Switch -->
 
-					<!-- BEGIN Main Buttons -->
-					<tr>
-						<td>
-							<table id="playfield">&nbsp;</table>
-						</td>
-					</tr>
-					<!-- END Main Buttons -->
+						<!-- BEGIN Main Buttons -->
+						<tr bgcolor=black>
+							<td align=center>
+								<table id="playfield">&nbsp;</table>
+							</td>
+						</tr>
+						<!-- END Main Buttons -->
 
-					<!-- BEGIN Lower Buttons -->
-					<tr>
-						<td align=center colspan=3>
-							<button onclick="hw.click('start')">START/PITCH-7</button>
-							<button onclick="hw.click('select')">SELECT</button>
-							<button onclick="hw.click('playhit')">PLAY-2/HIT-7</button>
-						</td>
-					</tr>
-					<!-- END Lower Buttons -->
-				</table>
-			</span>
+						<!-- BEGIN Lower Buttons -->
+						<tr>
+							<td align=center colspan=3>
+								<div class="controls">
+									<div class="btnGrp">
+										<button class="lower btnAux" onclick="hw.click('start')"></button></br>
+										START/PITCH-7
+									</div>
+									<div class="btnGrp">
+										<button class="lower btnAux" onclick="hw.click('select')"></button></br>
+										SELECT
+									</div>
+									<div class="btnGrp">
+										<button class="lower btnAux" onclick="hw.click('playhit')"></button><br />
+										PLAY-2/HIT-7
+									</div>
+								</div>
+							</td>
+						</tr>
+						<!-- END Lower Buttons -->
+					</table>
+				</span>
+			</center>
 		</div>
 		<!-- END Console -->
 
