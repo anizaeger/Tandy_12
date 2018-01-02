@@ -695,9 +695,9 @@ class OpSys {
 		this.hw = hw;
 		this.doc = doc;
 		this.timeStamp = null;
+		this.clkReset();
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
-		this.clkReset();
 	}
 
 	clockTick( timeStamp ) {
