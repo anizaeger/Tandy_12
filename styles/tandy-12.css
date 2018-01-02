@@ -1,8 +1,8 @@
 div.btnMain { 
-	width:113px; 
-	height:133px;
+	width:100px; 
+	height:110px;
 	background: url(../images/lg-btn.png);
-	background-size: 113px 133px;
+	background-size: 100px 110px;
 	color: white;
 	display: table-cell;
 	vertical-align: bottom;
@@ -17,7 +17,7 @@ div.btnMain {
 	display: table-cell;
 	vertical-align: middle;
 	width: 99px;
-	font-size:10pt;
+	font-size:7pt;
 }
 
 .upper.btnAux {
@@ -31,7 +31,7 @@ div.btnMain {
 .btnAux {
 	height: 33px;
 	width: 33px;
-	border-radius:11px;
+	border-radius:7px;
 }
 
 .btnText {
