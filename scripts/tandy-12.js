@@ -91,21 +91,26 @@ class Manpage {
 
 class Config {
 	constructor() {
-		this._clockMinHz = .5;
-		this._clockMaxHz = 8;
-		this._clockDefHz = 2;
+		this._clockHzMin = .5;
+		this._clockHzMax = 8;
+		this._clockHzDef = 2;
+		this._clockPrec = 10000;
 	}
 
 	getClockHzMin() {
-		return this._clockMinHz;
+		return this._clockHzMin;
 	}
 
 	getClockHzMax() {
-		return this._clockMaxHz;
+		return this._clockHzMax;
 	}
 
 	getClockHzDef() {
-		return this._clockDefHz;
+		return this._clockHzDef;
+	}
+
+	getClockPrec() {
+		return this._clockPrec;
 	}
 }
 
@@ -371,6 +376,7 @@ class Clock {
 
 		this.clockHzMin = CONFIG.getClockHzMin();
 		this.clockHzMax = CONFIG.getClockHzMax();
+		this.clockPrcn = CONFIG.getClockPrec();
 
 		this.clockMsMin = this.hzToMs( this.clockHzMax );
 		this.clockMsMax = this.hzToMs( this.clockHzMin );
@@ -378,7 +384,7 @@ class Clock {
 		this.clockMs.max = this.clockMsMax;
 
 		// Represent slider as percentages.
-		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * 10000 )
+		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * this.clockPrcn );
 		this.clockslide.min = minPcnt;
 		this.clockslide.max = 10000;
 
@@ -389,23 +395,23 @@ class Clock {
 	}
 
 	ratioToHz( ratio ) {
-		return (( this.clockHzMax ) * ratio );
+		return ( this.clockHzMax  * ratio );
 	}
 
-	msToHz( msec ) {
-		return Math.round(msec / ( 1 / 1000 ));
+	msToHz( ms ) {
+		return 1000 / ms;
 	}
 
 	hzToMs( hz ) {
-		return (( 1 / hz ) * 1000 );
+		return Math.round( 1000 / hz );
 	}
 
-	msToRatio( msec ) {
-		return Math.round(( msec / this.clockMsMax ) * 10000 );
+	msToRatio( ms ) {
+		return ( ms / this.clockMsMax ) * 10000;
 	}
 
 	hzToRatio( hz ) {
-		return Math.round(( hz / this.clockHzMax ) * 10000 );
+		return ( hz / this.clockHzMax ) * 10000;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -459,9 +465,9 @@ class Clock {
 	}
 
 	set() {
-		var msec = this.clockMs.value;
-		if ( msec >= this.clockMsMin && msec <= this.clockMsMax ) {
-			var hz = this.msToHz( msec );
+		var ms = this.clockMs.value;
+		if ( ms >= this.clockMsMin && ms <= this.clockMsMax ) {
+			var hz = this.msToHz( ms );
 			var ratio = this.hzToRatio( hz );
 			this.clockslide.value = ratio;
 			this.adjust();
@@ -491,7 +497,9 @@ class Clock {
 	}
 
 	default() {
-		this.clockslide.value = 2500;
+		var ms = this.hzToMs( CONFIG.getClockHzDef());
+		var ratio = this.msToRatio( ms )
+		this.clockslide.value = ratio;
 		this.adjust();
 	}
 };
