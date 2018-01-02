@@ -419,8 +419,10 @@ class Clock {
 	DESCRIPTION:		Reset clock by stopping and restarting.
 	----------------------------------------------------------------------------- */
 	reset() {
-		this.stop();
-		this.start();
+		if ( this.hw.power ) {
+			this.stop();
+			this.start();
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -434,7 +436,6 @@ class Clock {
 
 	start() {
 		if ( this.hw.power ) {
-			this.stop();
 			this.run();
 		}
 	}
@@ -696,6 +697,7 @@ class OpSys {
 		this.timeStamp = null;
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
+		this.clkReset();
 	}
 
 	clockTick( timeStamp ) {
@@ -2108,8 +2110,6 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		'Boot',
 		'Picker'
 	]
-
-	progs = progs.concat( PROGS );
 
 	var dbgBootprog = document.getElementById('STARTUP_PROG');
 
