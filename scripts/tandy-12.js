@@ -308,14 +308,18 @@ class Light {
 					false - off
 	----------------------------------------------------------------------------- */
 	lit( state ) {
+		var brightness;
+
 		if ( state ) {
-			this.light.style.backgroundColor = this.hue(this.num);
+			brightness = 0.25;
 		} else {
-			this.light.style.backgroundColor = this.hue(this.num);
-			var origBgColor = window.getComputedStyle(this.light).getPropertyValue('background-color');
-			var newBgColor = this.hw.shadeBlend(-.75,origBgColor);
-			this.light.style.backgroundColor = newBgColor;
+			brightness = -0.75;
 		}
+
+		this.light.style.backgroundColor = this.hue( this.num );
+		var origBgColor = window.getComputedStyle( this.light ).getPropertyValue( 'background-color' );
+		var newBgColor = this.hw.shadeBlend( brightness ,origBgColor );
+		this.light.style.backgroundColor = newBgColor;
 	}
 };
 
