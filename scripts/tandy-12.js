@@ -506,6 +506,7 @@ class Clock {
 		var ratio = this.msToRatio( ms )
 		this.clockslide.value = ratio;
 		this.adjust();
+		this.reset();
 	}
 };
 
@@ -623,9 +624,8 @@ class Sequencer{
 	FUNCTION:		Sequencer::load
 	DESCRIPTION:		Load desired sequence into memory, and set output mode.
 	----------------------------------------------------------------------------- */
-	load( tones, label ) {
+	load( tones ) {
 		this.clear();
-		this.label = label;
 
 		for ( var idx = 0; idx < tones.length; idx++ ) {
 			this.add( tones[ idx ]);
@@ -677,11 +677,11 @@ class Sequencer{
 	FUNCTION:		Sequencer::start
 	DESCRIPTION:		Begin playback of sequence.
 	----------------------------------------------------------------------------- */
-	start( light, note ) {
+	start( label, light, note ) {
+		this.label = label;
 		this.light = light;
 		this.note = note;
 		this.pos = 0;
-		this.os.clkReset();
 		this.run = true;
 	}
 
@@ -758,8 +758,8 @@ class OpSys {
 	}
 
 	seqLoad( tones, label, light = true, tone = true ) {
-		this.seq.load( tones, label );
-		this.seq.start( light, tone );
+		this.seq.load( tones );
+		this.seq.start( label, light, tone );
 	}
 
 	seqClear() {
@@ -770,8 +770,8 @@ class OpSys {
 		this.seq.add( btn )
 	}
 
-	seqStart( light = true, tone = true ) {
-		this.seq.start( light, tone );
+	seqStart( label, light = true, tone = true ) {
+		this.seq.start( label, light, tone );
 	}
 
 	seqEnd( label ) {
@@ -827,7 +827,10 @@ class Boot {
 		this.os = os;
 		this.progNum = 0;
 		this.os.clkReset();
-		this.os.seqLoad([ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ]);
+		for ( var btn = 0; btn < 12; btn++ ) {
+			this.os.seqAdd( btn );
+		}
+		this.os.seqStart();
 	}
 
 	seqEnd() {
@@ -1183,16 +1186,15 @@ class Tag_It {
 			if ( this.newBtn ) {	// Advance light only every other second.
 				this.newBtn = false;
 				this.btnNum = this.os.randBtn();
-				this.os.playBip( this.btnNum, '', true, true );
+				this.os.playBip( this.btnNum, '', true, false );
 				this.getInput = true;
 			} else {
-				this.newBtn = true;
-				if ( ++this.count > 110 )
+				if ( ++this.count <= 11 ) {
+					this.newBtn = true;
+				} else {
 					this.endGame();
+				}
 			}
-		} else if ( this.getScore ) {	// Show final score
-			this.getScore = false;
-			this.showScore();
 		}
 	}
 
@@ -1204,37 +1206,46 @@ class Tag_It {
 
 	endGame() {
 		this.inPlay = false;
-		this.getScore = true;
+		this.os.seqLoad([ 8, 8, 8, 5, 5, 7, 6, 6, 6, 4, 4, 4 ], 'endGame', false, true)
 	}
 
 	showScore() {
-		if ( this.score < 10 ) {
-			
-		} else if ( this.score < 20 ) {
-			this.os.flash( 0, '', 3 );
-		} else if ( this.score < 30 ) {
-			this.os.flash( 1, '', 3 );
-		} else if ( this.score < 40 ) {
-			this.os.flash( 2, '', 3 );
-		} else if ( this.score < 50 ) {
-			this.os.flash( 3, '', 3 );
-		} else if ( this.score < 60 ) {
-			this.os.flash( 4, '', 3 );
-		} else if ( this.score < 70 ) {
-			this.os.flash( 5, '', 3 );
-		} else if ( this.score < 80 ) {
-			this.os.flash( 6, '', 3 );
-		} else if ( this.score < 90 ) {
-			this.os.flash( 7, '', 3 );
-		} else if ( this.score < 100 ) {
-			this.os.flash( 8, '', 3 );
-		} else if ( this.score < 110 ) {
-			this.os.flash( 9, '', 3 );
+		if ( this.score < 1 ) {
+			this.seqEnd( 'score' );
+		} else if ( this.score < 2 ) {
+			this.os.flash( 0, 'score', 3 );
+		} else if ( this.score < 3 ) {
+			this.os.flash( 1, 'score', 3 );
+		} else if ( this.score < 4 ) {
+			this.os.flash( 2, 'score', 3 );
+		} else if ( this.score < 5 ) {
+			this.os.flash( 3, 'score', 3 );
+		} else if ( this.score < 6 ) {
+			this.os.flash( 4, 'score', 3 );
+		} else if ( this.score < 7 ) {
+			this.os.flash( 5, 'score', 3 );
+		} else if ( this.score < 8 ) {
+			this.os.flash( 6, 'score', 3 );
+		} else if ( this.score < 9 ) {
+			this.os.flash( 7, 'score', 3 );
+		} else if ( this.score < 10 ) {
+			this.os.flash( 8, 'score', 3 );
+		} else if ( this.score < 11 ) {
+			this.os.flash( 9, 'score', 3 );
 		} else {
-			this.os.flash( 10, '', 3 );
+			this.os.flash( 10, 'score', 3 );
 		}
+	}
 
-		this.os.selectPgm( this.id );
+	seqEnd( label ) {
+		switch( label ) {
+		case 'endGame':
+			this.showScore();
+			break;
+		case 'score':
+			this.os.selectPgm( this.id );
+			break;
+		}
 	}
 };
 
