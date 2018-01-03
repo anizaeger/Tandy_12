@@ -1184,16 +1184,16 @@ class Tag_It {
 	clockTick() {
 		if ( this.inPlay ) {	// A game is in progress
 			if ( this.newBtn ) {	// Advance light only every other second.
-				this.newBtn = false;
-				this.btnNum = this.os.randBtn();
-				this.os.playBip( this.btnNum, '', true, false );
-				this.getInput = true;
-			} else {
-				if ( ++this.count <= 11 ) {
-					this.newBtn = true;
+				if ( ++this.count <= 110 ) {
+					this.newBtn = false;
+					this.btnNum = this.os.randBtn();
+					this.os.playBip( this.btnNum, '', true, false );
+					this.getInput = true;
 				} else {
 					this.endGame();
 				}
+			} else {
+				this.newBtn = true;
 			}
 		}
 	}
@@ -1210,27 +1210,27 @@ class Tag_It {
 	}
 
 	showScore() {
-		if ( this.score < 1 ) {
+		if ( this.score < 10 ) {
 			this.seqEnd( 'score' );
-		} else if ( this.score < 2 ) {
+		} else if ( this.score < 20 ) {
 			this.os.flash( 0, 'score', 3 );
-		} else if ( this.score < 3 ) {
+		} else if ( this.score < 30 ) {
 			this.os.flash( 1, 'score', 3 );
-		} else if ( this.score < 4 ) {
+		} else if ( this.score < 40 ) {
 			this.os.flash( 2, 'score', 3 );
-		} else if ( this.score < 5 ) {
+		} else if ( this.score < 50 ) {
 			this.os.flash( 3, 'score', 3 );
-		} else if ( this.score < 6 ) {
+		} else if ( this.score < 60 ) {
 			this.os.flash( 4, 'score', 3 );
-		} else if ( this.score < 7 ) {
+		} else if ( this.score < 70 ) {
 			this.os.flash( 5, 'score', 3 );
-		} else if ( this.score < 8 ) {
+		} else if ( this.score < 80 ) {
 			this.os.flash( 6, 'score', 3 );
-		} else if ( this.score < 9 ) {
+		} else if ( this.score < 90 ) {
 			this.os.flash( 7, 'score', 3 );
-		} else if ( this.score < 10 ) {
+		} else if ( this.score < 100 ) {
 			this.os.flash( 8, 'score', 3 );
-		} else if ( this.score < 11 ) {
+		} else if ( this.score < 110 ) {
 			this.os.flash( 9, 'score', 3 );
 		} else {
 			this.os.flash( 10, 'score', 3 );
