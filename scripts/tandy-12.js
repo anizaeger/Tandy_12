@@ -844,6 +844,7 @@ class Picker {
 		this.os.sysMem = this;
 		this.btnNum = id;
 		this.select = false;
+		this.doPick = true;
 		this.pages = [
 			'organ',
 			'song-writer',
@@ -869,7 +870,7 @@ class Picker {
 	}
 
 	button( btn, state ) {
-		if ( state ) {
+		if ( this.doPick && state ) {
 			this.btnNum = btn;
 			this.select = false;
 		}
@@ -878,6 +879,7 @@ class Picker {
 	btnClick( btnName ) {
 		switch ( btnName ) {
 		case 'start':
+			this.doPick = false;
 			this.os.clear();
 			this.os.playBip( this.btnNum, 'loadPgm', true );
 			this.os.doc.setManpage( this.pages[ this.btnNum ]);
@@ -945,6 +947,8 @@ class Song_Writer {
 		switch( btnName ) {
 		case 'start':
 			this.os.seqClear();
+			this.newSong = true;
+			this.playing = false;
 			break;
 		case 'select':
 			if ( !this.playing ) {
@@ -959,18 +963,20 @@ class Song_Writer {
 			}
 			break;
 		case 'playhit':
-			if ( !this.playing ) {
+			if ( !( this.playing || this.newSong )) {
 				this.playing = true;
 				this.os.seqStart();
 			}
 			break;
 		case 'repeat':
 			this.os.seq.repeat = true;
+			break;
 		}
 	}
 
 	button( btn, state ) {
 		if ( !this.playing ) {
+			this.newSong = false;
 			this.os.blast( btn, state );
 			if ( state ) {
 				this.os.seqAdd( btn );
