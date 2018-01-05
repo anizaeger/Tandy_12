@@ -410,7 +410,7 @@ class Clock {
 
 		// Set minimums
 		this.clockHzMin = CONFIG.getClockHzMin();
-		if ( this.clockHzMin > 0.1 ) {
+		if ( this.clockHzMin < 0.1 ) {
 			this.clockHzMin = 0.1;
 		}
 		this.clockMsMin = this.hzToMs( this.clockHzMax );
