@@ -845,7 +845,7 @@ class Picker {
 		this.btnNum = id;
 		this.select = false;
 		this.doPick = true;
-		this.pages = [
+		this.manpages = [
 			'organ',
 			'song-writer',
 			'repeat',
@@ -882,7 +882,7 @@ class Picker {
 			this.doPick = false;
 			this.os.clear();
 			this.os.playBip( this.btnNum, 'loadPgm', true );
-			this.os.doc.setManpage( this.pages[ this.btnNum ]);
+			this.os.doc.setManpage( this.manpages[ this.btnNum ]);
 			break;
 		case 'select':
 			if ( this.select ){
