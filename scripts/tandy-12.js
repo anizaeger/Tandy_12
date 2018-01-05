@@ -28,10 +28,7 @@
 *
 */
 
-// Program to launch upon powering up Tandy--12
-const STARTUP_PROG = 'Boot';
-
-const GAMES = [
+const PROGS = [
 	'Organ',
 	'Song_Writer',
 	'Repeat',
@@ -51,7 +48,10 @@ const NUM_BTNS = 12;
 const NUM_ROWS = 4;
 const NUM_COLS = 3;
 
+var CONFIG;
 var hw;
+var clock;
+var DEBUG;
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		gplAlert
@@ -87,6 +87,31 @@ class Manpage {
 	setManpage( app ) {
 		this.manFrame.src = 'man/' + app + '.html';
 	}
+};
+
+class Config {
+	constructor() {
+		this._clockHzMin = .5;
+		this._clockHzMax = 8;
+		this._clockHzDef = 2;
+		this._clockPrec = 10000;
+	}
+
+	getClockHzMin() {
+		return this._clockHzMin;
+	}
+
+	getClockHzMax() {
+		return this._clockHzMax;
+	}
+
+	getClockHzDef() {
+		return this._clockHzDef;
+	}
+
+	getClockPrec() {
+		return this._clockPrec;
+	}
 }
 
 /* -----------------------------------------------------------------------------
@@ -98,15 +123,15 @@ class Tandy12 {
 	constructor() {
 		this.clock = new Clock( this );
 		this.osc = new Osc();
-		this.power = null;
+		this.power = false;
 		this.os = null;
 		this.doc = new Manpage();
 
 		this.lights = new Array(NUM_BTNS);
 		for ( var light = 0; light < NUM_BTNS; light++ ) {
-			this.lights[ light ] = new Light( light );
+			this.lights[ light ] = new Light( this, light );
+			this.lights[ light ].lit( false );
 		}
-
 
 		this.flasher = new Flasher( this );
 
@@ -114,30 +139,26 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::setPower
+	FUNCTION:		Tandy12::setPower
 	DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 				to the main page.
 	----------------------------------------------------------------------------- */
 	setPower() {
 		this.power = document.getElementById('switch').checked;
 		if ( this.power ) {
-			this.power = true;
 			this.getInput = true;
 			this.os = new OpSys( this, this.doc );
 		} else {
-			this.power = false;
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
-			for ( var light = 0; light < NUM_BTNS; light++ ) {
-				this.lights[ light ].lit( false );
-			}
+			this.darken();
 			this.doc.setManpage('main');
 		}
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::button
+	FUNCTION:		Tandy12::button
 	DESCRIPTION:		Process presses and releases of main game buttons.
 	----------------------------------------------------------------------------- */
 	button( btn, state ) {
@@ -151,7 +172,7 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::light
+	FUNCTION:		Tandy12::light
 	DESCRIPTION:		Manipulate individual and groups of lights.
 	----------------------------------------------------------------------------- */
 	light( num, state ) {
@@ -169,7 +190,7 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::tone
+	FUNCTION:		Tandy12::tone
 	DESCRIPTION:		Pass audio commands to Oscillator.
 	----------------------------------------------------------------------------- */
 	tone( tone, state ) {
@@ -181,7 +202,7 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::blast
+	FUNCTION:		Tandy12::blast
 	DESCRIPTION:		Active light and tone associated with particular button.
 	----------------------------------------------------------------------------- */
 	blast( btn, state ) {
@@ -190,7 +211,7 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::darken
+	FUNCTION:		Tandy12::darken
 	DESCRIPTION:		Turn off all lights.
 	----------------------------------------------------------------------------- */
 	darken() {
@@ -200,7 +221,7 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::clockTick
+	FUNCTION:		Tandy12::clockTick
 	DESCRIPTION:		Receive ticks from Clock and pass on to Flasher and OpSys.
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
@@ -211,15 +232,15 @@ class Tandy12 {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::endSeq
+	FUNCTION:		Tandy12::seqEnd
 	DESCRIPTION:		Notify OpSys that Flasher has completed cycle count.
 	----------------------------------------------------------------------------- */
-	endSeq( label ) {
-		this.os.endSeq( label )
+	seqEnd( label ) {
+		this.os.seqEnd( label )
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Hardware::click
+	FUNCTION:		Tandy12::click
 	DESCRIPTION:		Process auxiliary buttons.
 	----------------------------------------------------------------------------- */
 	click( type ) {
@@ -227,14 +248,74 @@ class Tandy12 {
 			this.os.btnClick( type );
 		}
 	}
-}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Tandy12::shadeBlend
+	DESCRIPTION:		Calculate new value for color after applying shading.
+	ATTRIBUTION:		https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
+	----------------------------------------------------------------------------- */
+	shadeBlend(p, from, to) {
+		if ( typeof( p ) !="number" || p < -1 || p > 1 || typeof( from ) != "string" || (from[0] != 'r' && from[0] != '#' ) || ( typeof( to ) != "string" && typeof( to ) != "undefined" )) {	//ErrorCheck
+			return null;
+		}
+		
+		if ( !this.sbcRip )this.sbcRip = ( d ) => {
+			let l = d.length, RGB = new Object();
+			if ( l > 9 ) {
+				d = d.split( "," );
+				if( d.length < 3 || d.length > 4 ) {	//ErrorCheck
+					return null;
+				}
+				RGB[0] = i( d[0].slice( 4 )),
+				RGB[1] = i( d[1]),
+				RGB[2] = i( d[2]),
+				RGB[3] = d[3] ? parseFloat( d[3]) : -1;
+			} else {
+				if( l == 8 || l == 6 || l < 4 ){	//ErrorCheck
+					return null;
+				}
+
+				if( l < 6) {	//3 digit
+					d = "#" + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + ( l > 4 ? d[4] + "" + d[4] : "");
+				} 
+
+				d = i( d.slice(1) , 16 ),
+				RGB[0] = d >> 16 & 255,
+				RGB[1] = d >> 8 & 255,
+				RGB[2] = d & 255,
+				RGB[3] = l == 9 || l == 5 ? r((( d >> 24 & 255 ) / 255 ) * 10000 ) / 10000 : -1;
+			}
+
+			return RGB;
+		}
+		var i = parseInt,
+		r = Math.round,
+		h = from.length > 9,
+		h = typeof( to ) == "string" ? to.length > 9 ? true : to == "c" ? !h : false : h,
+		b = p < 0,
+		p = b ? p * -1 : p,
+		to = to && to != "c" ? to : b ? "#000000" : "#FFFFFF",
+		f = this.sbcRip( from ),
+		t = this.sbcRip( to );
+		if ( !f || !t ) {	//ErrorCheck
+			return null;
+		}
+
+		if ( h ) {
+			return "rgb(" + r(( t[0] - f[0] ) * p + f[0]) + "," + r(( t[1] - f[1] ) * p + f[1]) + "," + r(( t[2] - f[2]) * p + f[2]) + ( f[3] < 0 && t [3] < 0 ? ")" : "," + (f[3] > -1 && t[3]> -1 ? r((( t[3] - f[3]) * p + f[3]) * 10000 ) / 10000 : t[3] < 0 ? f[3] : t[3]) + ")" );
+		} else {
+			return "#" + ( 0x100000000 + ( f[3] > -1 && t[3] > -1? r((( t[3] - f[3]) * p + f[3]) * 255) : t[3] > -1 ? r( t[3] * 255 ) : f[3] > -1 ? r( f[3] * 255 ) : 255 ) * 0x1000000 + r(( t[0] - f[0]) * p + f[0]) * 0x10000 + r(( t[1] - f[1]) * p + f[1]) * 0x100 + r(( t[2] - f[2]) * p + f[2])).toString(16).slice( f[3] > -1 || t[3]> -1 ? 1 : 3);
+		}
+	}
+};
 
 /* -----------------------------------------------------------------------------
 CLASS:			Light
 DESCRIPTION:		Simulates Tandy-12 lights.
 ----------------------------------------------------------------------------- */
 class Light {
-	constructor(num) {
+	constructor( hw, num ) {
+		this.hw = hw;
 		this.num = num;
 		this.id = 'mainBtn'+this.num
 		this.light = document.getElementById(this.id);
@@ -258,39 +339,18 @@ class Light {
 					false - off
 	----------------------------------------------------------------------------- */
 	lit( state ) {
-		if ( state ) {
-			this.light.style.backgroundColor = this.hue(this.num);
-		} else {
-			this.light.style.backgroundColor = this.hue(this.num);
-			var origBgColor = window.getComputedStyle(this.light).getPropertyValue('background-color');
-			var newBgColor = this.shadeBlend(-.75,origBgColor);
-			this.light.style.backgroundColor = newBgColor;
-		}
-	}
+		var brightness;
 
-	/* -----------------------------------------------------------------------------
-	FUNCTION:		Light::shadeBlend
-	DESCRIPTION:		Calculate new value for color after applying shading.
-	----------------------------------------------------------------------------- */
-	shadeBlend( p, c0, c1 ) {
-		var n = p < 0 ? p * -1 : p,
-		u = Math.round,
-		w = parseInt;
-		if ( c0.length > 7 ) {
-			var f = c0.split(","),
-			t = ( c1 ? c1 : p < 0 ? "rgb(0,0,0)" : "rgb(255,255,255)" ).split(","),
-			R = w( f[0].slice(4)),
-			G = w( f[1]),
-			B = w(f[2]);
-			return "rgb(" + ( u(( w( t[0].slice(4)) - R ) * n ) + R ) + "," + ( u(( w( t[1]) - G ) * n ) + G ) + "," + ( u(( w( t[2]) - B ) * n ) + B ) + ")";
+		if ( state ) {
+			brightness = 0.25;
 		} else {
-			var f = w ( c0.slice(1), 16 ),
-			t = w(( c1 ? c1 : p < 0 ? "#000000" : "#FFFFFF" ).slice(1), 16 ),
-			R1 = f >> 16,
-			G1 = f >> 8 & 0x00FF,
-			B1 = f & 0x0000FF;
-			return "#" + ( 0x1000000 + ( u ((( t >> 16 ) - R1 ) * n ) + R1 ) * 0x10000 + ( u((( t >> 8 & 0x00FF ) - G1 ) * n ) + G1 ) * 0x100 + ( u ((( t & 0x0000FF ) - B1 ) * n ) + B1 )).toString(16).slice(1);
+			brightness = -0.75;
 		}
+
+		this.light.style.backgroundColor = this.hue( this.num );
+		var origBgColor = window.getComputedStyle( this.light ).getPropertyValue( 'background-color' );
+		var newBgColor = this.hw.shadeBlend( brightness ,origBgColor );
+		this.light.style.backgroundColor = newBgColor;
 	}
 };
 
@@ -339,8 +399,61 @@ DESCRIPTION:		Simulates Tandy-12 clock pulse generator.
 class Clock {
 	constructor( hw ) {
 		this.hw = hw;
-		this.timeStamp = 0;
 		this.timer = null;
+
+		this.clockRgbMin = '#ff0000';
+		this.clockRgbMax = '#00ff00';
+
+		this.clockHz = document.getElementById("clockHz");
+		this.clockMs = document.getElementById("clockMs");
+		this.clockslide = document.getElementById("clockSlider");
+
+		// Set minimums
+		this.clockHzMin = CONFIG.getClockHzMin();
+		if ( this.clockHzMin > 0.1 ) {
+			this.clockHzMin = 0.1;
+		}
+		this.clockMsMin = this.hzToMs( this.clockHzMax );
+		this.clockMs.min = this.clockMsMin;
+
+		// Set maximums
+		this.clockHzMax = CONFIG.getClockHzMax();
+		if ( this.clockHzMax > 10 ) {
+			this.clockHzMax = 10;
+		}
+		this.clockMsMax = this.hzToMs( this.clockHzMin );
+		this.clockMs.max = this.clockMsMax;
+
+		// Represent slider as percentages.
+		this.clockPrcn = CONFIG.getClockPrec();
+		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * this.clockPrcn );
+		this.clockslide.min = minPcnt;
+		this.clockslide.max = 10000;
+
+		document.getElementById("clockHzMin").innerHTML = this.clockHzMin + 'hz';
+		document.getElementById("clockHzMax").innerHTML = this.clockHzMax + 'hz';
+
+		this.default();
+	}
+
+	ratioToHz( ratio ) {
+		return ( this.clockHzMax  * ratio );
+	}
+
+	msToHz( ms ) {
+		return 1000 / ms;
+	}
+
+	hzToMs( hz ) {
+		return Math.round( 1000 / hz );
+	}
+
+	msToRatio( ms ) {
+		return ( ms / this.clockMsMax ) * 10000;
+	}
+
+	hzToRatio( hz ) {
+		return ( hz / this.clockHzMax ) * 10000;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -348,8 +461,10 @@ class Clock {
 	DESCRIPTION:		Reset clock by stopping and restarting.
 	----------------------------------------------------------------------------- */
 	reset() {
-		this.stop();
-		this.tick();
+		if ( this.hw.power ) {
+			this.stop();
+			this.run();
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -359,11 +474,13 @@ class Clock {
 	----------------------------------------------------------------------------- */
 	tick() {
 		this.hw.clockTick( this.timeStamp++ );
+	}
 
-		var tmpThis = this;
-		this.timer = setTimeout( function() {
-			tmpThis.tick();
-		}, 500);
+	start() {
+		if ( this.hw.power ) {
+			this.timeStamp = 0;
+			this.run();
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -371,7 +488,64 @@ class Clock {
 	DESCRIPTION:		Stop clock.
 	----------------------------------------------------------------------------- */
 	stop() {
-		clearTimeout( this.timer );
+		if ( typeof this.timer !== 'undefined' ) {
+			clearTimeout( this.timer );
+		}
+	}
+
+	advance() {
+		if ( this.hw.power ) {
+			this.stop();
+			this.tick();
+		}
+	}
+
+	run() {
+		this.tick();
+		var tmpThis = this;
+		this.timer = setTimeout( function() {
+			tmpThis.run();
+		}, this.clockRate );
+	}
+
+	set() {
+		var ms = this.clockMs.value;
+		if ( ms >= this.clockMsMin && ms <= this.clockMsMax ) {
+			var hz = this.msToHz( ms );
+			var ratio = this.hzToRatio( hz );
+			this.clockslide.value = ratio;
+			this.adjust();
+		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::Adjust
+	DESCRIPTION:		Accepts percentage from slider, and converts it to
+				milliseconds.
+	----------------------------------------------------------------------------- */
+	adjust() {
+		// Value of slider as a decimal.
+		var ratio = this.clockslide.value / 10000;
+		var dispPcnt = Math.round( ratio * 10000 ) / 100;
+
+		var newHz = Math.round( this.ratioToHz( ratio ) * 100 ) / 100;
+		var newMs = Math.round( this.hzToMs( newHz ));
+
+		this.clockslide.style.backgroundColor = this.hw.shadeBlend( ratio, this.clockRgbMin,this.clockRgbMax );
+
+		this.clockHz.innerHTML = newHz + 'hz';
+		this.clockMs.value = newMs;
+
+		document.getElementById("clockPcnt").innerHTML = dispPcnt + '%';
+		this.clockRate = newMs;
+	}
+
+	default() {
+		var ms = this.hzToMs( CONFIG.getClockHzDef());
+		var ratio = this.msToRatio( ms )
+		this.clockslide.value = ratio;
+		this.adjust();
+		this.reset();
 	}
 };
 
@@ -401,7 +575,7 @@ class Flasher {
 				this.off();
 				if ( this.cycles && this.count >= this.cycles ) {
 					this.stop();
-					this.hw.endSeq( this.label );
+					this.hw.seqEnd( this.label );
 				} else {
 					this.state = !this.state;
 				}
@@ -481,23 +655,24 @@ class Sequencer{
 	constructor( os ) {
 		this.os = os;
 		this.seq = [];
+		this.len = this.seq.length;
+		this.MAXLEN = 44;
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::load
+	FUNCTION:		Sequencer::load
 	DESCRIPTION:		Load desired sequence into memory, and set output mode.
 	----------------------------------------------------------------------------- */
-	load( tones, label, light = true, note = true ) {
-		this.label = label;
-		this.seq.length = 0;
-		this.seq = tones.slice();
-		this.len = this.seq.length;
-		this.light = light;
-		this.note = note;
+	load( tones ) {
+		this.clear();
+
+		for ( var idx = 0; idx < tones.length; idx++ ) {
+			this.add( tones[ idx ]);
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::clockTick
+	FUNCTION:		Sequencer::clockTick
 	DESCRIPTION:		Step through sequence one element at a time per clock
 				tick.
 	----------------------------------------------------------------------------- */
@@ -522,13 +697,30 @@ class Sequencer{
 		}
 	}
 
+	add( note ) {
+		this.seq.push( note );
+		this.len = this.seq.length;
+		var overflow = this.len - this.MAXLEN;
+		if ( overflow > 0 ) {
+			for ( var over = 0; over < overflow; over++ ) {
+				this.seq.shift();
+			}
+		}
+	}
+
+	clear() {
+		this.seq.length = 0;
+	}
+
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::start
+	FUNCTION:		Sequencer::start
 	DESCRIPTION:		Begin playback of sequence.
 	----------------------------------------------------------------------------- */
-	start() {
+	start( label, light, note ) {
+		this.label = label;
+		this.light = light;
+		this.note = note;
 		this.pos = 0;
-		this.os.clkReset();
 		this.run = true;
 	}
 
@@ -536,7 +728,7 @@ class Sequencer{
 		this.run = false;
 		var tmpThis = this;
 		setTimeout( function() {
-			tmpThis.os.endSeq( tmpThis.label );
+			tmpThis.os.seqEnd( tmpThis.label );
 		}, 125);
 	}
 };
@@ -546,23 +738,28 @@ class OpSys {
 		this.hw = hw;
 		this.doc = doc;
 		this.timeStamp = null;
-		this.sysMem = new ( eval( STARTUP_PROG ))( this );
+		this.hw.clock.start();
 		this.seq = new Sequencer( this );
-		this.clkReset();
+		this.sysMem = new ( eval( this.getBootProg()))( this );
 	}
 
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
-
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
-				this.sysMem.clockTick( timeStamp );
+				this.sysMem.clockTick( this.timeStamp );
 			}
 		}
 	}
 
 	clkReset() {
 		this.hw.clock.reset();
+	}
+
+	getBootProg() {
+		var bootProg = document.getElementById('STARTUP_PROG');
+		var progName = bootProg.options[bootProg.selectedIndex].value;
+		return progName;
 	}
 
 	selectPgm( id ) {
@@ -598,14 +795,26 @@ class OpSys {
 		return row
 	}
 
-	startSeq( tones, label, light, tone ) {
-		this.seq.load( tones, label, light, tone );
-		this.seq.start();
+	seqLoad( tones, label, light = true, tone = true ) {
+		this.seq.load( tones );
+		this.seq.start( label, light, tone );
 	}
 
-	endSeq( label ) {
-		if ( typeof this.sysMem.endSeq === "function" ) {
-			this.sysMem.endSeq( label );
+	seqClear() {
+		this.seq.clear();
+	}
+
+	seqAdd( btn ) {
+		this.seq.add( btn )
+	}
+
+	seqStart( label, light = true, tone = true ) {
+		this.seq.start( label, light, tone );
+	}
+
+	seqEnd( label ) {
+		if ( typeof this.sysMem.seqEnd === "function" ) {
+			this.sysMem.seqEnd( label );
 		}
 	}
 
@@ -654,16 +863,16 @@ class OpSys {
 class Boot {
 	constructor( os ) {
 		this.os = os;
-		this.btnNum = 0;
+		this.progNum = 0;
+		this.os.clkReset();
+		for ( var btn = 0; btn < 12; btn++ ) {
+			this.os.seqAdd( btn );
+		}
+		this.os.seqStart();
 	}
 
-	clockTick() {
-		this.os.clear();
-		if ( this.btnNum < NUM_BTNS ) {
-			this.os.blast(this.btnNum++, true);
-		} else {
-			this.os.selectPgm();
-		}
+	seqEnd() {
+		this.os.selectPgm( this.progNum );
 	}
 };
 
@@ -673,6 +882,7 @@ class Picker {
 		this.os.sysMem = this;
 		this.btnNum = id;
 		this.select = false;
+		this.doPick = true;
 		this.pages = [
 			'organ',
 			'song-writer',
@@ -698,7 +908,7 @@ class Picker {
 	}
 
 	button( btn, state ) {
-		if ( state ) {
+		if ( this.doPick && state ) {
 			this.btnNum = btn;
 			this.select = false;
 		}
@@ -707,8 +917,10 @@ class Picker {
 	btnClick( btnName ) {
 		switch ( btnName ) {
 		case 'start':
+			this.doPick = false;
 			this.os.clear();
 			this.os.playBip( this.btnNum, 'loadPgm', true );
+			this.os.doc.setManpage( this.pages[ this.btnNum ]);
 			break;
 		case 'select':
 			if ( this.select ){
@@ -725,8 +937,7 @@ class Picker {
 		switch( label ) {
 		case 'loadPgm':
 			this.os.sysMem = null;
-			this.os.sysMem = new (eval( GAMES[ this.btnNum ]))( this.os, this.btnNum );
-			this.os.doc.setManpage( this.pages[ this.btnNum ]);
+			this.os.sysMem = new (eval( PROGS[ this.btnNum ]))( this.os, this.btnNum );
 			break;
 		}
 	}
@@ -766,14 +977,16 @@ class Song_Writer {
 		this.id = id;
 		this.os.sysMem = this;
 		this.song = [];
-		this.newSong = false;
 		this.playing = false;
+		this.os.seqClear();
 	}
 
 	btnClick( btnName ) {
 		switch( btnName ) {
 		case 'start':
-			this.clear();
+			this.os.seqClear();
+			this.newSong = true;
+			this.playing = false;
 			break;
 		case 'select':
 			if ( !this.playing ) {
@@ -784,50 +997,33 @@ class Song_Writer {
 			break;
 		case 'space':
 			if ( !this.playing ){
-				this.addNote( '-' );
+				this.os.seqAdd( '-' );
 			}
 			break;
 		case 'playhit':
-			if ( !this.playing ) {
-				this.playStart();
+			if ( !( this.playing || this.newSong )) {
+				this.playing = true;
+				this.os.seqStart();
 			}
 			break;
 		case 'repeat':
 			this.os.seq.repeat = true;
+			break;
 		}
 	}
 
 	button( btn, state ) {
 		if ( !this.playing ) {
+			this.newSong = false;
 			this.os.blast( btn, state );
 			if ( state ) {
-				this.addNote( btn );
+				this.os.seqAdd( btn );
 			}
 		}
 	}
 
-	clear() {
-		this.song.length = 0;
-		this.newSong = false;
-	}
-
-	addNote( btn ) {
-		if ( this.newSong ) {
-			this.clear();
-		}
-		if ( this.song.length < 44 ) {
-			this.song.push( btn );
-		}
-	}
-
-	playStart() {
-		this.playing = true;
-		this.os.startSeq( this.song );
-	}
-
-	endSeq() {
+	seqEnd() {
 		this.playing = false;
-		this.newSong = true;
 	}
 };
 
@@ -893,15 +1089,15 @@ class Repeat {
 		this.count = 0;
 		this.seq.push( this.os.randBtn());
 		this.os.clkReset();
-		this.os.startSeq( this.seq, 'genSeq' );
+		this.os.seqLoad( this.seq, 'genSeq' );
 	}
 
 	loss() {
 		this.getInput = false;
-		this.os.startSeq([0,0,0,0,7,0,7,0,7,0], 'loss');
+		this.os.seqLoad([0,0,0,0,7,0,7,0,7,0], 'loss');
 	}
 
-	endSeq( type ) {
+	seqEnd( type ) {
 		switch( type ) {
 		case 'genSeq':
 			this.getInput = true;
@@ -917,7 +1113,7 @@ class Repeat {
 
 	flashScore() {
 		if (( this.seq.len - 1 ) < 12 ) {
-			this.endSeq( 'gameOver' );
+			this.seqEnd( 'gameOver' );
 		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
 			this.os.flash( 0, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
@@ -953,6 +1149,7 @@ class Torpedo {
 		switch( btnName ) {
 		case 'start':
 			this.startGame();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
@@ -983,7 +1180,7 @@ class Torpedo {
 
 	win() {
 		this.gameOver = true;
-		this.os.startSeq([0,0,2,4,5,2,5,'-',7,7,8,4,7,7,7,'-'], 'win');
+		this.os.seqLoad([0,0,2,4,5,2,5,'-',7,7,8,4,7,7,7,'-'], 'win');
 	}
 
 	loss() {
@@ -991,7 +1188,7 @@ class Torpedo {
 		this.os.flash( this.sub, 'loss', 3 );
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		this.startGame();
 	}
 };
@@ -1032,18 +1229,17 @@ class Tag_It {
 	clockTick() {
 		if ( this.inPlay ) {	// A game is in progress
 			if ( this.newBtn ) {	// Advance light only every other second.
-				this.newBtn = false;
-				this.btnNum = this.os.randBtn();
-				this.os.playBip( this.btnNum, '', true, true );
-				this.getInput = true;
+				if ( ++this.count <= 110 ) {
+					this.newBtn = false;
+					this.btnNum = this.os.randBtn();
+					this.os.playBip( this.btnNum, '', true, false );
+					this.getInput = true;
+				} else {
+					this.endGame();
+				}
 			} else {
 				this.newBtn = true;
-				if ( ++this.count > 110 )
-					this.endGame();
 			}
-		} else if ( this.getScore ) {	// Show final score
-			this.getScore = false;
-			this.showScore();
 		}
 	}
 
@@ -1055,37 +1251,46 @@ class Tag_It {
 
 	endGame() {
 		this.inPlay = false;
-		this.getScore = true;
+		this.os.seqLoad([ 8, 8, 8, 5, 5, 7, 6, 6, 6, 4, 4, 4 ], 'endGame', false, true)
 	}
 
 	showScore() {
 		if ( this.score < 10 ) {
-			
+			this.seqEnd( 'score' );
 		} else if ( this.score < 20 ) {
-			this.os.flash( 0, '', 3 );
+			this.os.flash( 0, 'score', 3 );
 		} else if ( this.score < 30 ) {
-			this.os.flash( 1, '', 3 );
+			this.os.flash( 1, 'score', 3 );
 		} else if ( this.score < 40 ) {
-			this.os.flash( 2, '', 3 );
+			this.os.flash( 2, 'score', 3 );
 		} else if ( this.score < 50 ) {
-			this.os.flash( 3, '', 3 );
+			this.os.flash( 3, 'score', 3 );
 		} else if ( this.score < 60 ) {
-			this.os.flash( 4, '', 3 );
+			this.os.flash( 4, 'score', 3 );
 		} else if ( this.score < 70 ) {
-			this.os.flash( 5, '', 3 );
+			this.os.flash( 5, 'score', 3 );
 		} else if ( this.score < 80 ) {
-			this.os.flash( 6, '', 3 );
+			this.os.flash( 6, 'score', 3 );
 		} else if ( this.score < 90 ) {
-			this.os.flash( 7, '', 3 );
+			this.os.flash( 7, 'score', 3 );
 		} else if ( this.score < 100 ) {
-			this.os.flash( 8, '', 3 );
+			this.os.flash( 8, 'score', 3 );
 		} else if ( this.score < 110 ) {
-			this.os.flash( 9, '', 3 );
+			this.os.flash( 9, 'score', 3 );
 		} else {
-			this.os.flash( 10, '', 3 );
+			this.os.flash( 10, 'score', 3 );
 		}
+	}
 
-		this.os.selectPgm( this.id );
+	seqEnd( label ) {
+		switch( label ) {
+		case 'endGame':
+			this.showScore();
+			break;
+		case 'score':
+			this.os.selectPgm( this.id );
+			break;
+		}
 	}
 };
 
@@ -1134,13 +1339,13 @@ class Roulette {
 
 	spin() {
 		this.btnEnable = false;
-		this.ticks = this.os.randRange(11,40);
+		this.ticks = this.os.randRange( 11, 40 );
 		this.count = 0;
 		this.idx = this.wheel.length;
 		this.os.clkReset();
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch( label ) {
 		case 'gameOver':
 			this.os.blast( this.wheel[ this.idx ], true, true, false );
@@ -1203,7 +1408,7 @@ class Baseball {
 		this.hit = true;
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch( label ) {
 		case 'hit':
 			this.scoreboard.hit( this.btnNum );
@@ -1217,7 +1422,20 @@ class Baseball {
 class Scoreboard{
 	constructor( game ) {
 		this.game = game;
-		this.outcome = [ 'Triple','Out','Out','Single','Out','Home Run','Out','Out','Single','Out','Double','Out' ];
+		this.outcome = [
+			'Triple',
+			'Out',
+			'Out',
+			'Single',
+			'Out',
+			'Home Run',
+			'Out',
+			'Out',
+			'Single',
+			'Out',
+			'Double',
+			'Out'
+		];
 		this.outs = null;
 		this.start()
 	}
@@ -1303,7 +1521,7 @@ class Scoreboard{
 		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
 		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
 	}
-}
+};
 
 /*
 Repeat Plus
@@ -1324,7 +1542,7 @@ class Repeat_Plus {
 		this.seq.length = 0;
 		var randBtn = this.os.randBtn();
 		this.seq.push( randBtn );
-		this.os.startSeq( this.seq, 'genSeq' )
+		this.os.seqLoad( this.seq, 'genSeq' )
 	}
 
 	btnClick( btnName ) {
@@ -1363,18 +1581,18 @@ class Repeat_Plus {
 
 	loss() {
 		this.getInput = false;
-		this.os.startSeq([0,0,0,0,7,0,7,0,7,0], 'loss');
+		this.os.seqLoad([0,0,0,0,7,0,7,0,7,0], 'loss');
 	}
 
 	endBip( label ) {
 		switch( label ) {
 		case 'success':
-			this.endSeq('genSeq');
+			this.seqEnd('genSeq');
 			break;
 		}
 	}
 
-	endSeq( type ) {
+	seqEnd( type ) {
 		switch( type ) {
 		case 'genSeq':
 			this.count = 0;
@@ -1392,7 +1610,7 @@ class Repeat_Plus {
 
 	flashScore() {
 		if (( this.seq.len - 1 ) < 12 ) {
-			this.endSeq( 'gameOver' );
+			this.seqEnd( 'gameOver' );
 		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
 			this.os.flash( 0, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
@@ -1466,10 +1684,10 @@ class Treasure_Hunt {
 			this.loss();
 			break;
 		case 1:
-			this.os.flash( 0, 'score', 3 );
+			this.os.flash( 0, 'score', 3, true, false );
 			break;
 		case 2:
-			this.os.startSeq([ 1, 0, 1, 0, 1, 0 ], 'score');
+			this.os.flash([ 0, 1 ], 'score', 3, true, false );
 			break;
 		case 3:
 			this.win();
@@ -1477,7 +1695,7 @@ class Treasure_Hunt {
 		}
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch ( label ) {
 		case 'score':
 			if ( !this.gameOver ) {
@@ -1487,18 +1705,19 @@ class Treasure_Hunt {
 			break;
 		case 'gameOver':
 			this.gameOver = true;
+			this.start();
 			break;	
 		}
 	}
 
 	win() {
-		this.os.startSeq([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
+		this.os.seqLoad([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
 	}
 
 	loss() {
-		this.os.startSeq( this.seq, 'gameOver' );
+		this.os.seqLoad( this.seq, 'gameOver', true, false );
 	}
-}
+};
 
 /*
 Compete
@@ -1559,9 +1778,9 @@ class Compete {
 
 	score() {
 		if ( this.winner ) {
-			this.os.startSeq([ 8, 9, 10, 11, 10, 9, 8 ], 'win', true, false );
+			this.os.seqLoad([ 8, 9, 10, 11, 10, 9, 8 ], 'win', true, false );
 		} else {
-			this.os.startSeq([ 0, 1, 2, 3, 2, 1, 0 ], 'win', true, false );
+			this.os.seqLoad([ 0, 1, 2, 3, 2, 1, 0 ], 'win', true, false );
 		}
 	}
 
@@ -1591,7 +1810,7 @@ class Compete {
 		}
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch ( label ) {
 		case 'inPlay':
 			this.inPlay = false;
@@ -1768,7 +1987,7 @@ class Fire_Away {
 		}
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch( label ) {
 		case 'score':
 			this.os.selectPgm( this.id );
@@ -1918,7 +2137,7 @@ class Hide_N_Seek {
 		return result;
 	}
 
-	endSeq( label ) {
+	seqEnd( label ) {
 		switch ( label ) {
 		case 'score':
 			if ( !this.gameOver ) {
@@ -1934,13 +2153,13 @@ class Hide_N_Seek {
 	}
 
 	win() {
-		this.os.startSeq([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
+		this.os.seqLoad([ 5, 5, 5, '-', 1, 2, 1, 2 ], 'gameOver' );
 	}
 
 	loss() {
-		this.os.startSeq( this.seq, 'gameOver' );
+		this.os.seqLoad( this.seq, 'gameOver' );
 	}
-}
+};
 
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
@@ -1949,20 +2168,52 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 ----------------------------------------------------------------------------- */
 
 (function() {
-	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
+	var btnTxt = [
+		"Organ",
+		"Song Writer",
+		"Repeat",
+		"Torpedo",
+		"Tag-It",
+		"Roulette",
+		"Baseball",
+		"Repeat Plus",
+		"Treasure Hunt",
+		"Compete",
+		"Fire Away",
+		"Hide'N Seek"
+	];
 	var btnNum = 0;
 	var boardHtml = ""
+
+	// Generate Debugging Interface
+	var progs = [
+		'Boot',
+		'Picker'
+	]
+
+	var dbgBootprog = document.getElementById('STARTUP_PROG');
+
+	for ( var progIdx = 0; progIdx < progs.length; progIdx++ ) {
+		var opt = document.createElement("option");
+		opt.text = progs[ progIdx ];
+		dbgBootprog.add( opt );
+	}
+
+	// Generate Main Console
 	for ( c = 0; c < NUM_COLS; c++ ) {
 		boardHtml += '<td align=center>';
 		for ( r = 0; r < NUM_ROWS; r++) {
 			btnNum = r + ( c * NUM_ROWS );
 			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += btnTxt[btnNum];
+			boardHtml += '<span class="btnText">' + btnTxt[btnNum] + '</span>';
 		}
 		boardHtml += "</td>"
 	}
 
 	document.getElementById("playfield").innerHTML=boardHtml;
 
+	CONFIG = new Config();
 	hw = new Tandy12();
+	clock = hw.clock;
 })();
+

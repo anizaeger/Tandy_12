@@ -1,124 +1,55 @@
-Version pre-Alpha
-- CHANGES
-	Complete initial Dynamic Documentation
+### v0.2.0-rc.2 ###
+	*** OPTIMIZATIONS
+			- Minor code cleanup/clarification.
 
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Complete initial logic for playable game.
+		API and Backend
+			- Reset Clock timestamp when Tandy-12 is power cycled.
+			- Range checking for min/max clock rate to prevent divide-by-zero errors or excessively high maximums.
+			- Clean up Light initialization.
+			- Update shadeBlend to most recent version listed on ATTRIBUTION site.
 
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Added enemy missiles.
-
-Version pre-Alpha
-- CHANGES
-	Fire Away
-		Initial game logic.
-
-Version pre-Alpha
-- CHANGES
-	Updates to Dynamic Documentation
-
-	API Interface and Backend
-		Set all "magic numbers" at top of source file.
-		Correct errors in various documentation comments.
-		Minor optimizations and code cleanup.
-
-Version pre-Alpha
-- CHANGES:
-	Repeat Plus
-		Completed initial game logic.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Minor change to Picker. Game loading is now delayed to occur after the confirmation "bip".
-
-Version pre-Alpha
-- CHANGES
-	Tag-It
-		Completed game logic.
-
-Version pre-Alpha
-CHANGES
-	Comments, minor optimizations.
-
-Version pre-Alpha
-- CHANGES:
-	Moved introductory documentation to README.
-	Embedded README into introductory documentation iframe.
-
-Version pre-Alpha
-- CHANGES:
-	Add/update comments. More to come...
-
-Version pre-Alpha
-- CHANGES:
-	Hide'N Seek
-		Complete initial version of game logic.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Add Tandy12 function to darken all lights.
-		Add/update documentation comments.
-		Rename Hardware class to Tandy12
-
-- BUGFIXS:
-	Bugfix to prevent oscillator from processing light arrays (only 1 tone at a time will work).
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Add ability to manipulate a group of simultaneous lights.
-
-Version pre-Alpha
-- CHANGES:
-	API Interface and Backend
-		Move selection of Flasher mode from OpSys to Flasher.
-		Begin standardization of A/V interface in OpSys.
-		Allow Sequencer to create sequences of only light or sound.
-
-	Treasure Hunt
-		Complete majority of game logic.
-
-Version pre-Alpha
-- CHANGES:
-	Added mechanisms to:
-		Ensure that only one button can be active at a time.
-		Allow sequencer to sequence either just lights or just tones, in addition to both.
-		Generate "Bips" with lights, tones, or both.
-
-	Song-Writer
-		START button now clears stored sequences.
-
-	Torpedo
-		START button now starts a new game.
-		Game no longer exits to picker at conclusion.
-
-	Treasure Hunt
-		Create initial version of game.
-
-Version pre-Alpha
-- CHANGES:
-	Added hardware emulation:
-		Buttons
-		Lights
-		Clock
-		Flasher
-		Tone Oscillator
-
-	Added Operating System:
-		Tone Sequencer
-		Bootup Animation
-		Application Picker
-
-	Added Games:
-		Organ
-		Song Writer
-		Repeat
+	*** BUGFIXES
 		Torpedo
-		Roulette
-		Baseball
+			- Corrected issue which would result in exiting game when trying to start a new one.
+
+### v0.2.0-rc.1 ###
+	*** CHANGES
+		UI and Frontend
+			- Cosmetic changes to better emulate the appearance of the Tandy-12.
+
+		API and Backend
+			- Add debugging features.
+			- Move shadeBlend from Lights class to Tandy12 Class to more easily allow its use within other classes.
+			- Optimize sequencer.  Items in excess of Sequencer::MAXLEN will be truncated from the beginning of the sequence.  Interface added to OpSys for new features.
+			- Sequencer label is now set when sequence is started, rather than when a pre-generated sequence is loaded.
+
+		Debug
+			- Select bootup program via dropdown menu.
+			- Range input to adjust clock rate.
+
+		Boot
+			- Re-write bootup program to utilize Sequencer.
+
+		Song Writer
+			- Minor code change to take advantage of updates to Sequencer.
+
+		Tag-It
+			- Now checks for endGame condition before displaying light, rather than during wait cycle, allowing last light of game to be played.
+
+	*** OPTIMIZATIONS
+		API and Backend
+			- Reset Clock timestamp when Tandy-12 is power cycled.
+			- Clean up Light initialization.
+
+	*** BUGFIXES
+		API and Backend
+			- Minor bugfix to Sequencer; resolved issue where clock was being initialized multiple times each time Sequencer played a sequence.
+
+		Song-Writer
+			- Resolved issue which resulted in being unable to create a new song after clearing one during playback.
+
+		Picker
+			- Resolved issue which would cause the picker to load a different game than intended if a game button is pressed after pressing START, but before game is loaded into memory.
+
+### v0.1.0 ###
+	Initial Release, with basic UI, hardware and OS emulation, all 12 games, and dynamic documentation.

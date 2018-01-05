@@ -1,11 +1,41 @@
 div.btnMain { 
-	width:113px; 
-	height:133px;
+	width:100px; 
+	height:110px;
 	background: url(../images/lg-btn.png);
-	background-size: 113px 133px;
+	background-size: 100px 110px;
+	color: white;
 	display: table-cell;
 	vertical-align: bottom;
 	text-align: right;
+}
+
+.controls {
+	display:table;
+}
+
+.btnGrp {
+	display: table-cell;
+	vertical-align: middle;
+	width: 99px;
+	font-size:7pt;
+}
+
+.upper.btnAux {
+	background-color: orange;
+}
+
+.lower.btnAux {
+	background-color: saddlebrown;
+}
+
+.btnAux {
+	height: 33px;
+	width: 33px;
+	border-radius:7px;
+}
+
+.btnText {
+	color: white;
 }
 
 /* The switch - the box around the slider */
@@ -21,8 +51,8 @@ div.btnMain {
 	display:none;
 }
 
-/* The slider */
-.slider {
+/* The toggle */
+.toggle {
 	position: absolute;
 	cursor: pointer;
 	top: 0;
@@ -34,7 +64,7 @@ div.btnMain {
 	transition: .4s;
 }
 
-.slider:before {
+.toggle:before {
 	position: absolute;
 	content: "";
 	height: 13px;
@@ -46,15 +76,15 @@ div.btnMain {
 	transition: .4s;
 }
 
-input:checked + .slider {
+input:checked + .toggle {
 	  background-color: #000;
 }
 
-input:focus + .slider {
+input:focus + .toggle {
 	box-shadow: 0 0 1px #000;
 }
 
-input:checked + .slider:before {
+input:checked + .toggle:before {
 	-webkit-transform: translateX(13px);
 	-ms-transform: translateX(13px);
 	transform: translateX(13px);
@@ -62,10 +92,79 @@ input:checked + .slider:before {
 }
 
 /* Rounded sliders */
-.slider.round {
+.toggle.round {
 	border-radius: 17px;
 }
 
-.slider.round:before {
+.toggle.round:before {
   border-radius: 50%;
+}
+
+.wrapper {
+	display:table;
+	width:100%;
+}
+.content {
+	vertical-align: top;
+}
+.content.left {
+	display:table-cell;
+	width:50%;
+}
+.content.right {
+	display:table-cell;
+	width:50%;
+}
+.content.center {
+	display:table-cell;
+}
+.center span.console {
+	display:inline-block;
+	width:400px;
+}
+
+/*
+Clockrate Controller
+*/
+
+.slidecontainer {
+width: 100%; /* Width of the outside container */
+}
+
+/* The slider itself */
+.clockSlide {
+	-webkit-appearance: none;  /* Override default CSS styles */
+	appearance: none;
+	width: 100%; /* Full-width */
+	height: 15px; /* Specified height */
+	border-radius: 5px;
+	background: #d3d3d3; /* Grey background */
+	outline: none; /* Remove outline */
+	opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+	-webkit-transition: .2s; /* 0.2 seconds transition on hover */
+	transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.clockSlide:hover {
+	opacity: 1; /* Fully shown on mouse-over */
+}
+
+/* The slider handle (use webkit (Chrome, Opera, Safari, Edge) and moz (Firefox) to override default look) */ 
+.clockSlide::-webkit-slider-thumb {
+	-webkit-appearance: none; /* Override default look */
+	appearance: none;
+	width: 25px; /* Set a specific slider handle width */
+	height: 25px; /* Slider handle height */
+	border-radius: 50%;
+	background: #7F007F; /* Green background */
+	cursor: pointer; /* Cursor on hover */
+}
+
+.clockSlide::-moz-range-thumb {
+	width: 25px; /* Set a specific slider handle width */
+	height: 25px; /* Slider handle height */
+	border-radius: 50%;
+	background: #4CAF50; /* Green background */
+	cursor: pointer; /* Cursor on hover */
 }
