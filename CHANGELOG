@@ -1,4 +1,9 @@
-### v0.2.0-rc.2 ###
+### v0.2.1 ###
+	*** BUGFIX
+		API and Backend
+			- Resolved error which caused the clock to override the minimum value if it was greater than the minimum allowable.
+
+### v0.2.0 ###
 	*** OPTIMIZATIONS
 			- Minor code cleanup/clarification.
 
