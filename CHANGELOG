@@ -1,4 +1,18 @@
-### Version 0.2.0 ###
+### v0.2.0-rc.2 ###
+	*** OPTIMIZATIONS
+			- Minor code cleanup/clarification.
+
+		API and Backend
+			- Reset Clock timestamp when Tandy-12 is power cycled.
+			- Range checking for min/max clock rate to prevent divide-by-zero errors or excessively high maximums.
+			- Clean up Light initialization.
+			- Update shadeBlend to most recent version listed on ATTRIBUTION site.
+
+	*** BUGFIXES
+		Torpedo
+			- Corrected issue which would result in exiting game when trying to start a new one.
+
+### v0.2.0-rc.1 ###
 	*** CHANGES
 		UI and Frontend
 			- Cosmetic changes to better emulate the appearance of the Tandy-12.
@@ -22,6 +36,11 @@
 		Tag-It
 			- Now checks for endGame condition before displaying light, rather than during wait cycle, allowing last light of game to be played.
 
+	*** OPTIMIZATIONS
+		API and Backend
+			- Reset Clock timestamp when Tandy-12 is power cycled.
+			- Clean up Light initialization.
+
 	*** BUGFIXES
 		API and Backend
 			- Minor bugfix to Sequencer; resolved issue where clock was being initialized multiple times each time Sequencer played a sequence.
@@ -32,5 +51,5 @@
 		Picker
 			- Resolved issue which would cause the picker to load a different game than intended if a game button is pressed after pressing START, but before game is loaded into memory.
 
-### Version 0.1.0 ###
+### v0.1.0 ###
 	Initial Release, with basic UI, hardware and OS emulation, all 12 games, and dynamic documentation.
