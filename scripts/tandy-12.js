@@ -130,6 +130,7 @@ class Tandy12 {
 		this.lights = new Array(NUM_BTNS);
 		for ( var light = 0; light < NUM_BTNS; light++ ) {
 			this.lights[ light ] = new Light( this, light );
+			this.lights[ light ].lit( false );
 		}
 
 		this.flasher = new Flasher( this );
@@ -145,17 +146,13 @@ class Tandy12 {
 	setPower() {
 		this.power = document.getElementById('switch').checked;
 		if ( this.power ) {
-			this.power = true;
 			this.getInput = true;
 			this.os = new OpSys( this, this.doc );
 		} else {
-			this.power = false;
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
-			for ( var light = 0; light < NUM_BTNS; light++ ) {
-				this.lights[ light ].lit( false );
-			}
+			this.darken();
 			this.doc.setManpage('main');
 		}
 	}
@@ -255,25 +252,59 @@ class Tandy12 {
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Tandy12::shadeBlend
 	DESCRIPTION:		Calculate new value for color after applying shading.
+	ATTRIBUTION:		https://stackoverflow.com/questions/5560248/programmatically-lighten-or-darken-a-hex-color-or-rgb-and-blend-colors
 	----------------------------------------------------------------------------- */
-	shadeBlend( p, c0, c1 ) {
-		var n = p < 0 ? p * -1 : p,
-		u = Math.round,
-		w = parseInt;
-		if ( c0.length > 7 ) {
-			var f = c0.split(","),
-			t = ( c1 ? c1 : p < 0 ? "rgb(0,0,0)" : "rgb(255,255,255)" ).split(","),
-			R = w( f[0].slice(4)),
-			G = w( f[1]),
-			B = w(f[2]);
-			return "rgb(" + ( u(( w( t[0].slice(4)) - R ) * n ) + R ) + "," + ( u(( w( t[1]) - G ) * n ) + G ) + "," + ( u(( w( t[2]) - B ) * n ) + B ) + ")";
+	shadeBlend(p, from, to) {
+		if ( typeof( p ) !="number" || p < -1 || p > 1 || typeof( from ) != "string" || (from[0] != 'r' && from[0] != '#' ) || ( typeof( to ) != "string" && typeof( to ) != "undefined" )) {	//ErrorCheck
+			return null;
+		}
+		
+		if ( !this.sbcRip )this.sbcRip = ( d ) => {
+			let l = d.length, RGB = new Object();
+			if ( l > 9 ) {
+				d = d.split( "," );
+				if( d.length < 3 || d.length > 4 ) {	//ErrorCheck
+					return null;
+				}
+				RGB[0] = i( d[0].slice( 4 )),
+				RGB[1] = i( d[1]),
+				RGB[2] = i( d[2]),
+				RGB[3] = d[3] ? parseFloat( d[3]) : -1;
+			} else {
+				if( l == 8 || l == 6 || l < 4 ){	//ErrorCheck
+					return null;
+				}
+
+				if( l < 6) {	//3 digit
+					d = "#" + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + ( l > 4 ? d[4] + "" + d[4] : "");
+				} 
+
+				d = i( d.slice(1) , 16 ),
+				RGB[0] = d >> 16 & 255,
+				RGB[1] = d >> 8 & 255,
+				RGB[2] = d & 255,
+				RGB[3] = l == 9 || l == 5 ? r((( d >> 24 & 255 ) / 255 ) * 10000 ) / 10000 : -1;
+			}
+
+			return RGB;
+		}
+		var i = parseInt,
+		r = Math.round,
+		h = from.length > 9,
+		h = typeof( to ) == "string" ? to.length > 9 ? true : to == "c" ? !h : false : h,
+		b = p < 0,
+		p = b ? p * -1 : p,
+		to = to && to != "c" ? to : b ? "#000000" : "#FFFFFF",
+		f = this.sbcRip( from ),
+		t = this.sbcRip( to );
+		if ( !f || !t ) {	//ErrorCheck
+			return null;
+		}
+
+		if ( h ) {
+			return "rgb(" + r(( t[0] - f[0] ) * p + f[0]) + "," + r(( t[1] - f[1] ) * p + f[1]) + "," + r(( t[2] - f[2]) * p + f[2]) + ( f[3] < 0 && t [3] < 0 ? ")" : "," + (f[3] > -1 && t[3]> -1 ? r((( t[3] - f[3]) * p + f[3]) * 10000 ) / 10000 : t[3] < 0 ? f[3] : t[3]) + ")" );
 		} else {
-			var f = w ( c0.slice(1), 16 ),
-			t = w(( c1 ? c1 : p < 0 ? "#000000" : "#FFFFFF" ).slice(1), 16 ),
-			R1 = f >> 16,
-			G1 = f >> 8 & 0x00FF,
-			B1 = f & 0x0000FF;
-			return "#" + ( 0x1000000 + ( u ((( t >> 16 ) - R1 ) * n ) + R1 ) * 0x10000 + ( u((( t >> 8 & 0x00FF ) - G1 ) * n ) + G1 ) * 0x100 + ( u ((( t & 0x0000FF ) - B1 ) * n ) + B1 )).toString(16).slice(1);
+			return "#" + ( 0x100000000 + ( f[3] > -1 && t[3] > -1? r((( t[3] - f[3]) * p + f[3]) * 255) : t[3] > -1 ? r( t[3] * 255 ) : f[3] > -1 ? r( f[3] * 255 ) : 255 ) * 0x1000000 + r(( t[0] - f[0]) * p + f[0]) * 0x10000 + r(( t[1] - f[1]) * p + f[1]) * 0x100 + r(( t[2] - f[2]) * p + f[2])).toString(16).slice( f[3] > -1 || t[3]> -1 ? 1 : 3);
 		}
 	}
 };
@@ -368,7 +399,6 @@ DESCRIPTION:		Simulates Tandy-12 clock pulse generator.
 class Clock {
 	constructor( hw ) {
 		this.hw = hw;
-		this.timeStamp = 0;
 		this.timer = null;
 
 		this.clockRgbMin = '#ff0000';
@@ -378,16 +408,24 @@ class Clock {
 		this.clockMs = document.getElementById("clockMs");
 		this.clockslide = document.getElementById("clockSlider");
 
+		// Set minimums
 		this.clockHzMin = CONFIG.getClockHzMin();
-		this.clockHzMax = CONFIG.getClockHzMax();
-		this.clockPrcn = CONFIG.getClockPrec();
-
+		if ( this.clockHzMin > 0.1 ) {
+			this.clockHzMin = 0.1;
+		}
 		this.clockMsMin = this.hzToMs( this.clockHzMax );
-		this.clockMsMax = this.hzToMs( this.clockHzMin );
 		this.clockMs.min = this.clockMsMin;
+
+		// Set maximums
+		this.clockHzMax = CONFIG.getClockHzMax();
+		if ( this.clockHzMax > 10 ) {
+			this.clockHzMax = 10;
+		}
+		this.clockMsMax = this.hzToMs( this.clockHzMin );
 		this.clockMs.max = this.clockMsMax;
 
 		// Represent slider as percentages.
+		this.clockPrcn = CONFIG.getClockPrec();
 		var minPcnt = Math.round(( this.clockHzMin / this.clockHzMax ) * this.clockPrcn );
 		this.clockslide.min = minPcnt;
 		this.clockslide.max = 10000;
@@ -425,7 +463,7 @@ class Clock {
 	reset() {
 		if ( this.hw.power ) {
 			this.stop();
-			this.start();
+			this.run();
 		}
 	}
 
@@ -440,6 +478,7 @@ class Clock {
 
 	start() {
 		if ( this.hw.power ) {
+			this.timeStamp = 0;
 			this.run();
 		}
 	}
@@ -449,7 +488,7 @@ class Clock {
 	DESCRIPTION:		Stop clock.
 	----------------------------------------------------------------------------- */
 	stop() {
-		if ( this.hw.power ) {
+		if ( typeof this.timer !== 'undefined' ) {
 			clearTimeout( this.timer );
 		}
 	}
@@ -699,17 +738,16 @@ class OpSys {
 		this.hw = hw;
 		this.doc = doc;
 		this.timeStamp = null;
-		this.clkReset();
+		this.hw.clock.start();
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
 	}
 
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
-
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
-				this.sysMem.clockTick( timeStamp );
+				this.sysMem.clockTick( this.timeStamp );
 			}
 		}
 	}
@@ -1111,6 +1149,7 @@ class Torpedo {
 		switch( btnName ) {
 		case 'start':
 			this.startGame();
+			break;
 		case 'select':
 			this.os.selectPgm( this.id );
 			break;
@@ -1300,7 +1339,7 @@ class Roulette {
 
 	spin() {
 		this.btnEnable = false;
-		this.ticks = this.os.randRange(11,40);
+		this.ticks = this.os.randRange( 11, 40 );
 		this.count = 0;
 		this.idx = this.wheel.length;
 		this.os.clkReset();
@@ -1383,7 +1422,20 @@ class Baseball {
 class Scoreboard{
 	constructor( game ) {
 		this.game = game;
-		this.outcome = [ 'Triple','Out','Out','Single','Out','Home Run','Out','Out','Single','Out','Double','Out' ];
+		this.outcome = [
+			'Triple',
+			'Out',
+			'Out',
+			'Single',
+			'Out',
+			'Home Run',
+			'Out',
+			'Out',
+			'Single',
+			'Out',
+			'Double',
+			'Out'
+		];
 		this.outs = null;
 		this.start()
 	}
@@ -2109,12 +2161,6 @@ class Hide_N_Seek {
 	}
 };
 
-class Debug{
-	constructor( hw ) {
-		this.hw = hw;
-	}
-};
-
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
 DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
@@ -2122,7 +2168,20 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 ----------------------------------------------------------------------------- */
 
 (function() {
-	var btnTxt = ["Organ","Song Writer","Repeat","Torpedo","Tag-It","Roulette","Baseball","Repeat Plus","Treasure Hunt","Compete","Fire Away","Hide'N Seek"];
+	var btnTxt = [
+		"Organ",
+		"Song Writer",
+		"Repeat",
+		"Torpedo",
+		"Tag-It",
+		"Roulette",
+		"Baseball",
+		"Repeat Plus",
+		"Treasure Hunt",
+		"Compete",
+		"Fire Away",
+		"Hide'N Seek"
+	];
 	var btnNum = 0;
 	var boardHtml = ""
 
