@@ -216,7 +216,7 @@ class Tandy12 {
 	----------------------------------------------------------------------------- */
 	darken() {
 		for ( var num = 0; num < NUM_BTNS; num++ ) {
-			this.light( num, false );
+			this.lights[ num ].lit( false );
 		}
 	}
 
