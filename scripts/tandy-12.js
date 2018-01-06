@@ -762,7 +762,7 @@ class OpSys {
 		return progName;
 	}
 
-	selectPgm( id ) {
+	selectPgm( id = 0 ) {
 		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
@@ -863,7 +863,6 @@ class OpSys {
 class Boot {
 	constructor( os ) {
 		this.os = os;
-		this.progNum = 0;
 		this.os.clkReset();
 		for ( var btn = 0; btn < 12; btn++ ) {
 			this.os.seqAdd( btn );
@@ -872,7 +871,7 @@ class Boot {
 	}
 
 	seqEnd() {
-		this.os.selectPgm( this.progNum );
+		this.os.selectPgm();
 	}
 };
 
