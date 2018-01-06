@@ -2214,6 +2214,4 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 
 	CONFIG = new Config();
 	hw = new Tandy12();
-	clock = hw.clock;
 })();
-

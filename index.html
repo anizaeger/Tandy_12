@@ -26,7 +26,7 @@
 					</td>
 					<td>
 						<div class="slidecontainer">
-							<input type="range" class="clockSlide" id="clockSlider" oninput="clock.adjust()"/>
+							<input type="range" class="clockSlide" id="clockSlider" oninput="hw.clock.adjust()"/>
 						</div>
 					</td>
 					<td>
@@ -36,21 +36,21 @@
 				<tr>
 					<td>
 						mSec:
-						<input type=number id='clockMs' /><button onclick="clock.set()">Set</button>
+						<input type=number id='clockMs' /><button onclick="hw.clock.set()">Set</button>
 					</td>
 					<td align=center>
 						<span id='clockPcnt'></span> - <span id='clockHz'></span>
 					</td>
 					<td>
-						<button onclick="clock.default()">Reset</button>
+						<button onclick="hw.clock.default()">Reset</button>
 					</td>
 				</tr>
 				<tr>
 					<td />
 					<td align=center>
-						<button onclick="clock.stop()">&#x25A0;</button>
-						<button onclick="clock.advance()">&#x25AE;&#x25B6;</button>
-						<button onclick="clock.start()">&#x25B6;</button>
+						<button onclick="hw.clock.stop()">&#x25A0;</button>
+						<button onclick="hw.clock.advance()">&#x25AE;&#x25B6;</button>
+						<button onclick="hw.clock.start()">&#x25B6;</button>
 					</td>
 					<td />
 				</tr>
