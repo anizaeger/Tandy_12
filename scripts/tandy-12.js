@@ -408,21 +408,21 @@ class Clock {
 		this.clockMs = document.getElementById("clockMs");
 		this.clockslide = document.getElementById("clockSlider");
 
-		// Set minimums
+		// Set minimum Hz / maximum Ms
 		this.clockHzMin = CONFIG.getClockHzMin();
 		if ( this.clockHzMin < 0.1 ) {
 			this.clockHzMin = 0.1;
 		}
-		this.clockMsMin = this.hzToMs( this.clockHzMax );
-		this.clockMs.min = this.clockMsMin;
+		this.clockMsMax = this.hzToMs( this.clockHzMin );
+		this.clockMs.max = this.clockMsMax;
 
-		// Set maximums
+		// Set maximum Hz / minimum Ms
 		this.clockHzMax = CONFIG.getClockHzMax();
 		if ( this.clockHzMax > 10 ) {
 			this.clockHzMax = 10;
 		}
-		this.clockMsMax = this.hzToMs( this.clockHzMin );
-		this.clockMs.max = this.clockMsMax;
+		this.clockMsMin = this.hzToMs( this.clockHzMax );
+		this.clockMs.min = this.clockMsMin;
 
 		// Represent slider as percentages.
 		this.clockPrcn = CONFIG.getClockPrec();
