@@ -148,12 +148,14 @@ class Tandy12 {
 		if ( this.power ) {
 			this.getInput = true;
 			this.os = new OpSys( this, this.doc );
+			DEBUG.genTable();
 		} else {
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
 			this.darken();
 			this.doc.setManpage('main');
+			DEBUG.clear();
 		}
 	}
 
@@ -229,6 +231,7 @@ class Tandy12 {
 			this.flasher.clockTick();
 			this.os.clockTick( timeStamp );
 		}
+		DEBUG.print();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -741,10 +744,13 @@ class OpSys {
 		this.hw.clock.start();
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
+		this.debug();
 	}
 
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
+		this.debug();
+
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
 				this.sysMem.clockTick( this.timeStamp );
@@ -754,6 +760,14 @@ class OpSys {
 
 	clkReset() {
 		this.hw.clock.reset();
+	}
+
+	debug() {
+		DEBUG.clear();
+		DEBUG.update( this.constructor.name, this );
+		DEBUG.update( this.sysMem.constructor.name, this.sysMem );
+		DEBUG.update( this.seq.constructor.name, this.seq );
+		DEBUG.genTable();
 	}
 
 	getBootProg() {
@@ -766,6 +780,7 @@ class OpSys {
 		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
+		this.debug();
 	}
 
 	randRange( min, max ) {
@@ -2160,6 +2175,50 @@ class Hide_N_Seek {
 	}
 };
 
+class Debug {
+	constructor() {
+		this.registers = {};
+	}
+
+	clear() {
+		delete this.registers;
+		this.registers = {};
+		document.getElementById('registers').innerHTML = '';
+	}
+
+	genTable() {
+		var dbgHtml = 'Registers:<br />';
+		dbgHtml += '<table width=100%>';
+		for ( var label in this.registers ) {
+			dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
+			for ( var key in this.registers[ label ]) {
+				dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+			}
+		}
+		dbgHtml += '</table>';
+		document.getElementById('registers').innerHTML = dbgHtml;
+	}
+
+	update( label, memory ) {
+		this.registers[ label ] = {};
+		for ( var key in memory ) {
+			if ( typeof memory[ key ] !== 'function' && memory[ key ] != '[object Object]' ){
+				this.registers[ label ][ key ] = memory[ key ];
+			}
+		}
+	}
+
+	print() {
+		for ( var label in this.registers ) {
+			for ( var key in this.registers[ label ]) {
+				if ( hw.power ) {
+					document.getElementById( key ).innerHTML = this.registers[ label ][ key ];
+				}
+			}
+		}
+	}
+};
+
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
 DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
@@ -2212,5 +2271,6 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	document.getElementById("playfield").innerHTML=boardHtml;
 
 	CONFIG = new Config();
+	DEBUG = new Debug();
 	hw = new Tandy12();
 })();
