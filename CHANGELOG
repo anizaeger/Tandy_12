@@ -1,3 +1,8 @@
+### v0.2.3 ###
+	*** BUGFIX
+		API and Backend
+			- Resolved issue where minimum Ms wasn't being enforced in clock overrides.
+
 ### v0.2.2 ###
 	*** BUGFIX
 		API and Backend
