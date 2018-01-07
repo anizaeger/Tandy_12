@@ -477,7 +477,7 @@ class Clock {
 	}
 
 	start() {
-		if ( this.hw.power ) {
+		if ( this.hw.power && this.timer == null ) {
 			this.timeStamp = 0;
 			this.run();
 		}
@@ -490,6 +490,7 @@ class Clock {
 	stop() {
 		if ( typeof this.timer !== 'undefined' ) {
 			clearTimeout( this.timer );
+			this.timer = null;
 		}
 	}
 
