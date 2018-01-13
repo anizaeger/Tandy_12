@@ -7,30 +7,36 @@
 		One or two players can play.  Standard baseball rules apply.  Press START/PITCH-7 to pitch a ball.  Flashing lights will move on the TANDY--12; try to hit the ball by pressing PLAY-2/HIT-7 button.  A button will flash and tones will sound, indicating the result of your at-bat.  Your score will be tracked on the playing board below.
 	</p>
 	<div>
-		<table id=hitType width=100%>
+		<table>
+			<tr>
+				<td>
+					<table id=hitType width=100% border=1></table>
+				</td>
+				<td>
+				<td>
+					<table>
+						<tr width=33%>
+							<td width=33%>&nbsp;</td>
+							<td width=33% id='base2'>*</td>
+							<td width=33%>&nbsp;</td>
+						</tr>
+						<tr width=33%>
+							<td id='base3'>*</td>
+							<td>&nbsp;</td>
+							<td id='base1'>*</td>
+						</tr>
+						<tr width=33%>
+							<td>&nbsp;</td>
+							<td id='base0'>*</td>
+							<td>&nbsp;</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
 		</table>
 	</div>
 	<div>
-		<table>
-			<tr>
-				<td colspan=3><span id=half>&nbsp;</span> of inning <span id=inning>&nbsp;</span>, <span id=outs>&nbsp;</span> outs.</td>
-			</tr>
-			<tr>
-				<td>&nbsp;</td>
-				<td id='base2'>*</td>
-				<td>&nbsp;</td>
-			</tr>
-			<tr>
-				<td id='base3'>*</td>
-				<td>&nbsp;</td>
-				<td id='base1'>*</td>
-			</tr>
-			<tr>
-				<td>&nbsp;</td>
-				<td id='base0'>*</td>
-				<td>&nbsp;</td>
-			</tr>
-		</table>
+		<span id=half>&nbsp;</span> of inning <span id=inning>&nbsp;</span>, <span id=outs>&nbsp;</span> outs.
 	</div>
 	<div id=lineScore>&nbsp;</div><br />
 </body>

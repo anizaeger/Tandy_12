@@ -1441,17 +1441,17 @@ class Scoreboard{
 
 		var hitHtml = '';
 
-		hitHtml += '<tr>';
-		for ( var h = 0; h < NUM_BTNS; h++ ) {
-			hitHtml += '<td align=center>' + ( h + 1 ) + '</td>';
+		for ( var row = 0; row < NUM_ROWS; row++ ) {
+			hitHtml += '<tr>';
+			for ( var col = 0; col < NUM_COLS; col++ ) {
+				var h = col * NUM_ROWS + row;
+				hitHtml += '<td>';
+				hitHtml += "<div style='border-style: solid; border-radius: 25px; font-size: 10pt; height: 50px; width: 50px; text-align: center; vertical-align: middle;'>";
+				hitHtml += this.outcome[h];
+				hitHtml += '</div></td>';
+			}
+			hitHtml += '</tr>';
 		}
-		hitHtml += '</tr>';
-
-		hitHtml += '<tr>';
-		for ( var h = 0; h < NUM_BTNS; h++ ) {
-			hitHtml += '<td align=center style="vertical-align: top;">' + "<span style='writing-mode: vertical-lr; text-orientation: upright; white-space: nowrap;'>" + this.outcome[h] + '</span></td>';
-		}
-		hitHtml += '</tr>';
 
 		this.scoreboard.getElementById( 'hitType' ).innerHTML = hitHtml;
 
@@ -1488,7 +1488,6 @@ class Scoreboard{
 			this.advance += 1;
 		case 'Single':		// Home Run
 			this.advance += 1;
-			alert( this.advance )
 			this.rhe[ this.half ? 1 : 0 ][ 'h' ] != null ? this.rhe[ this.half ? 1 : 0 ][ 'h' ]++ : this.rhe[ this.half ? 1 : 0 ][ 'h' ] = 1;
 			break;
 		case 'Out':		// Out
@@ -1518,14 +1517,18 @@ class Scoreboard{
 
 	endPlay() {
 		if ( this.outs == 3 ) {
-			this.bases = [ false, false, false, false ];
-			this.outs = 0;
-			this.half = !this.half;
-			if ( !this.half ) {
-				this.endInning();
-			}
+			this.retire();
 		}
 		this.update();
+	}
+
+	retire() {
+		this.bases = [ false, false, false, false ];
+		this.outs = 0;
+		this.half = !this.half;
+		if ( !this.half ) {
+			this.endInning();
+		}
 	}
 
 	endInning() {
