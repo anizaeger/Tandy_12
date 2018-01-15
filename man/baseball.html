@@ -1,5 +1,13 @@
 <html>
 <head>
+	<style>
+		.base {
+			height: 60px;
+			width: 60px;
+			text-align: center;
+			line-height: 60px;
+		}
+	</style>
 </head>
 <body>
 	<b>Game 7: Baseball</b>
@@ -13,22 +21,21 @@
 					<table id=hitType width=100% border=1></table>
 				</td>
 				<td>
-				<td>
-					<table>
-						<tr width=33%>
-							<td width=33%>&nbsp;</td>
-							<td width=33% id='base2'>*</td>
-							<td width=33%>&nbsp;</td>
+					<table id=diamond>
+						<tr>
+							<td />
+							<td><div class='base' id='base2'>&nbsp;</div></td>
+							<td />
 						</tr>
-						<tr width=33%>
-							<td id='base3'>*</td>
-							<td>&nbsp;</td>
-							<td id='base1'>*</td>
+						<tr>
+							<td><div class='base' id='base3'>&nbsp;</div></td>
+							<td />
+							<td><div class='base' id='base1'>&nbsp;</div></td>
 						</tr>
-						<tr width=33%>
-							<td>&nbsp;</td>
-							<td id='base0'>*</td>
-							<td>&nbsp;</td>
+						<tr>
+							<td />
+							<td><div class='base' id='base0'>&nbsp;</div></td>
+							<td />
 						</tr>
 					</table>
 				</td>
