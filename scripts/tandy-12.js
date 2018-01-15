@@ -361,6 +361,7 @@ DESCRIPTION:		Simulates Tandy-12 tone generator.
 class Osc {
 	constructor() {
 		this.context = new (window.AudioContext || window.webkitAudioContext)();
+		this.iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -379,6 +380,7 @@ class Osc {
 	RETURNS:		Frequency of associated button number
 	----------------------------------------------------------------------------- */
 	play( tone, state ) {
+		if ( this.iOS ) { return }	// Don't run sounds on iOS.
 		if (!(typeof this.osc === 'undefined' || this.osc === null)) {
 			this.osc.stop();
 		}

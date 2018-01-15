@@ -1,3 +1,8 @@
+### v0.2.5 ###
+	*** BUGFIX
+		API and Backend
+			- Disable audio for iOS as workaround for issue regarding the manipulation of audio oscillators without user input.
+
 ### v0.2.4 ###
 	*** BUGFIX
 		API and Backend
