@@ -136,6 +136,7 @@ class Tandy12 {
 		this.flasher = new Flasher( this );
 
 		this.setPower();
+
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -2184,6 +2185,34 @@ class Debug {
 		delete this.registers;
 		this.registers = {};
 		document.getElementById('registers').innerHTML = '';
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Debug::bug
+	CALL:			DEBUG.bug( error, this, this.function.name, arguments );
+	DESCRIPTION:		Print exception report in alert box
+	RETURNS:		Nothing (Void Function)
+	----------------------------------------------------------------------------- */
+
+	bug( err, obj, func, args ) {
+		var alertTxt = '*** BUG - ';
+		alertTxt += obj.constructor.name + '::' + func + '( ';
+
+		var first = true;
+		for ( var arg of args ) {
+			if ( first ) {
+				first = false;
+			} else {
+				alertTxt += ', ';
+			}
+			alertTxt += arg
+		}
+
+		alertTxt += ' )\n';
+
+		alertTxt += 'Error - ' + err;
+
+		alert( alertTxt );
 	}
 
 	genTable() {
