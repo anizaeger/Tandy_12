@@ -148,12 +148,14 @@ class Tandy12 {
 		if ( this.power ) {
 			this.getInput = true;
 			this.os = new OpSys( this, this.doc );
+			DEBUG.genTable();
 		} else {
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
 			this.darken();
 			this.doc.setManpage('main');
+			DEBUG.clear();
 		}
 	}
 
@@ -229,6 +231,7 @@ class Tandy12 {
 			this.flasher.clockTick();
 			this.os.clockTick( timeStamp );
 		}
+		DEBUG.print();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -761,6 +764,7 @@ class OpSys {
 		this.hw.clock.start();
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
+		this.debug();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -770,6 +774,8 @@ class OpSys {
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
+		this.debug();
+
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
 				this.sysMem.clockTick( this.timeStamp );
@@ -792,6 +798,14 @@ class OpSys {
 				debugging pane.
 	RETURNS			Identifier of program to boot into.
 	----------------------------------------------------------------------------- */
+	debug() {
+		DEBUG.clear();
+		DEBUG.update( this.constructor.name, this );
+		DEBUG.update( this.sysMem.constructor.name, this.sysMem );
+		DEBUG.update( this.seq.constructor.name, this.seq );
+		DEBUG.genTable();
+	}
+
 	getBootProg() {
 		var bootProg = document.getElementById('STARTUP_PROG');
 		var progName = bootProg.options[bootProg.selectedIndex].value;
@@ -806,6 +820,7 @@ class OpSys {
 		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
+		this.debug();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -2308,6 +2323,97 @@ class Hide_N_Seek {
 	}
 };
 
+class Debug {
+	constructor() {
+		this.registers = {};
+		this.doDebug = false;
+	}
+
+	clear() {
+		delete this.registers;
+		this.registers = {};
+		document.getElementById('registers').innerHTML = '';
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Debug::bug
+	CALL:			DEBUG.bug( error, this, this.function.name, arguments );
+	DESCRIPTION:		Print exception report in alert box
+	RETURNS:		Nothing (Void Function)
+	----------------------------------------------------------------------------- */
+
+	bug( err, obj, func, args ) {
+		var alertTxt = '*** BUG - ';
+		alertTxt += obj.constructor.name + '::' + func + '( ';
+
+		var first = true;
+		for ( var arg of args ) {
+			if ( first ) {
+				first = false;
+			} else {
+				alertTxt += ', ';
+			}
+			alertTxt += arg
+		}
+
+		alertTxt += ' )\n';
+
+		alertTxt += 'Error - ' + err;
+
+		alert( alertTxt );
+	}
+
+	genTable() {
+		if ( this.doDebug ) {
+			var dbgHtml = 'Registers:<br />';
+			dbgHtml += '<table width=100%>';
+			for ( var label in this.registers ) {
+				dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
+				for ( var key in this.registers[ label ]) {
+					dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+				}
+			}
+			dbgHtml += '</table>';
+			document.getElementById('registers').innerHTML = dbgHtml;
+		}
+	}
+
+	update( label, memory ) {
+		this.registers[ label ] = {};
+		for ( var key in memory ) {
+			if ( typeof memory[ key ] !== 'function' && memory[ key ] != '[object Object]' ){
+				this.registers[ label ][ key ] = memory[ key ];
+			}
+		}
+	}
+
+	print() {
+		if ( this.doDebug ) {
+			for ( var label in this.registers ) {
+				for ( var key in this.registers[ label ]) {
+					if ( hw.power ) {
+						document.getElementById( key ).innerHTML = this.registers[ label ][ key ];
+					}
+				}
+			}
+		}
+	}
+
+	toggle() {
+		this.doDebug = !this.doDebug;
+		var dbgBtn = document.getElementById('dbgBtn');
+		if ( this.doDebug ) {
+			dbgBtn.innerHTML = 'Enabled';
+			this.genTable();
+			this.update();
+			this.print();
+		} else {
+			dbgBtn.innerHTML = 'Disabled'
+			this.clear();
+		}
+	}
+};
+
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
 DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
@@ -2360,5 +2466,6 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	}
 
 	CONFIG = new Config();
+	DEBUG = new Debug();
 	hw = new Tandy12();
 })();
