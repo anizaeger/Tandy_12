@@ -358,10 +358,43 @@ class Light {
 CLASS:			Osc
 DESCRIPTION:		Simulates Tandy-12 tone generator.
 ----------------------------------------------------------------------------- */
+
 class Osc {
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		constructor
+	DESCRIPTION:		Initialize web audio oscillator.
+	ATTRIBUTION:		https://gist.github.com/laziel/7aefabe99ee57b16081c
+	----------------------------------------------------------------------------- */
 	constructor() {
-		this.context = new (window.AudioContext || window.webkitAudioContext)();
-		this.iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
+		this.context = null, this.usingWebAudio = true, this.playing = false;
+
+		try {
+			if ( typeof AudioContext !== 'undefined' ) {
+				this.context = new AudioContext();
+			} else if ( typeof webkitAudioContext !== 'undefined' ) {
+				this.context = new webkitAudioContext();
+			} else {
+				this.usingWebAudio = false;
+			}
+		} catch( e ) {
+			alert( "*** BUG - Osc::constructor()\n" + "Error - " + e );
+			this.usingWebAudio = false;
+		}
+
+		if ( this.usingWebAudio && this.context.state === 'suspended' ) {
+			var resume = function() {
+				hw.osc.context.resume();
+
+				setTimeout( function() {
+					if ( hw.osc.context.state === 'running' ) {
+						document.body.removeEventListener( 'touchend', resume, false );
+					}
+				}, 0 );
+			};
+
+			document.body.addEventListener('touchend', resume, false);
+
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -380,16 +413,24 @@ class Osc {
 	RETURNS:		Frequency of associated button number
 	----------------------------------------------------------------------------- */
 	play( tone, state ) {
-		if ( this.iOS ) { return }	// Don't run sounds on iOS.
-		if (!(typeof this.osc === 'undefined' || this.osc === null)) {
-			this.osc.stop();
-		}
-		if ( state ) {
-			this.osc = this.context.createOscillator();
-			this.osc.type = 'square';
-			this.osc.frequency.value = this.freq( tone );
-			this.osc.connect(this.context.destination);
-			this.osc.start();
+		if ( this.usingWebAudio ) {
+			try {
+				if (!( typeof this.osc === 'undefined' || this.osc === null ) && this.playing == true ) {
+					this.osc.stop();
+					this.playing = false;
+				}
+				if ( state ) {
+					this.osc = this.context.createOscillator();
+					this.osc.type = 'square';
+					this.osc.frequency.value = this.freq( tone );
+					this.osc.connect( this.context.destination );
+					this.osc.start();
+					this.playing = true;
+				}
+			} catch( e ) {
+				alert( "*** BUG - Osc::play( " + tone + ", " + state + " )\n" + "Error - " + e );
+				this.usingWebAudio = false;
+			}
 		}
 	}
 };
