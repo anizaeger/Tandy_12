@@ -2329,7 +2329,6 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		"Fire Away",
 		"Hide'N Seek"
 	];
-	var btnNum = 0;
 	var boardHtml = ""
 
 	// Generate Debugging Interface
@@ -2347,17 +2346,18 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	}
 
 	// Generate Main Console
-	for ( c = 0; c < NUM_COLS; c++ ) {
-		boardHtml += '<td align=center>';
-		for ( r = 0; r < NUM_ROWS; r++) {
-			btnNum = r + ( c * NUM_ROWS );
-			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += '<span class="btnText">' + btnTxt[btnNum] + '</span>';
-		}
-		boardHtml += "</td>"
-	}
+	var playfield = document.getElementById("playfield");
 
-	document.getElementById("playfield").innerHTML=boardHtml;
+	for ( var r = 0; r < NUM_ROWS; r++ ) {
+		var row = playfield.insertRow( r );
+		for ( var c = 0; c < NUM_COLS; c++ ) {
+			var cell = row.insertCell( c );
+			var btnNum = ( c * NUM_ROWS ) + r;
+			var boardHtml = '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
+			boardHtml += '<div class="btnText" style="font-size:10pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + btnTxt[btnNum] + '</div>';
+			cell.innerHTML = boardHtml;
+		}
+	}
 
 	CONFIG = new Config();
 	hw = new Tandy12();
