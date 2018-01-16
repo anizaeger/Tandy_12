@@ -700,6 +700,10 @@ class Sequencer{
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::add
+	DESCRIPTION:		Appends single note to sequence.
+	----------------------------------------------------------------------------- */
 	add( note ) {
 		this.seq.push( note );
 		this.len = this.seq.length;
@@ -711,6 +715,10 @@ class Sequencer{
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::clear
+	DESCRIPTION:		Clears the sequence.
+	----------------------------------------------------------------------------- */
 	clear() {
 		this.seq.length = 0;
 	}
@@ -727,6 +735,10 @@ class Sequencer{
 		this.run = true;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::stop
+	DESCRIPTION:		Stops a running sequence.
+	----------------------------------------------------------------------------- */
 	stop() {
 		this.run = false;
 		var tmpThis = this;
@@ -736,6 +748,11 @@ class Sequencer{
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			OpSys
+DESCRIPTION:		Interface between hardware emulator and program logic
+			execution.
+----------------------------------------------------------------------------- */
 class OpSys {
 	constructor( hw, doc ) {
 		this.hw = hw;
@@ -746,6 +763,11 @@ class OpSys {
 		this.sysMem = new ( eval( this.getBootProg()))( this );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clockTick
+	DESCRIPTION:		Logic triggered by hardware clock emulator.  Passes
+				clock pulses on to program held in sysMem.
+	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
 		if ( !this.seq.clockTick()) {
@@ -755,72 +777,138 @@ class OpSys {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clockReset
+	DESCRIPTION:		Resets clock pulses to ensure full pulse when clock is
+				restarted.
+	----------------------------------------------------------------------------- */
 	clkReset() {
 		this.hw.clock.reset();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::getBootProg
+	DESCRIPTION:		Initialize bootup program selected by dropdown menu in
+				debugging pane.
+	RETURNS			Identifier of program to boot into.
+	----------------------------------------------------------------------------- */
 	getBootProg() {
 		var bootProg = document.getElementById('STARTUP_PROG');
 		var progName = bootProg.options[bootProg.selectedIndex].value;
 		return progName;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::selectPgm
+	DESCRIPTION:		Load 'Picker' into sysMem.
+	----------------------------------------------------------------------------- */
 	selectPgm( id = 0 ) {
 		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::randRange
+	DESCRIPTION:		Randomly selects a number between min and max,
+				inclusive.
+	RETURNS:		Random integer.
+	----------------------------------------------------------------------------- */
 	randRange( min, max ) {
 		min = Math.ceil(min);
 		max = Math.floor(max);
 		return Math.floor(Math.random() * ( max - min + 1 )) + min;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::randBtn
+	DESCRIPTION:		Selects a random button.
+	RETURNS:		ID of random button.
+	----------------------------------------------------------------------------- */
 	randBtn() {
 		var btn = this.randRange( 0, NUM_BTNS - 1 );
 		return btn;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::button
+	DESCRIPTION:		Triggered by pressing/releasing a main button as
+				registered by Tandy12 class.
+	----------------------------------------------------------------------------- */
 	button( btn, state ) {
 		if ( typeof this.sysMem.button == "function" ) {
 			this.sysMem.button( btn, state );
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnCol
+	DESCRIPTION:		Determines the column where button in question is
+				located.
+	RETURNS:		Integer identifying button col.
+	----------------------------------------------------------------------------- */
 	btnCol( btn ) {
 		var col = Math.floor(( btn / NUM_BTNS ) * NUM_COLS );
 		return col;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnRow
+	DESCRIPTION:		Determines the row where button in question is located.
+	RETURNS:		Integer identifying button row.
+	----------------------------------------------------------------------------- */
 	btnRow( btn ) {
 		var row = btn - ( this.btnCol( btn ) * NUM_ROWS );
 		return row
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqLoad
+	DESCRIPTION:		Loads a sequence into memory, then begins playback.
+	----------------------------------------------------------------------------- */
 	seqLoad( tones, label, light = true, tone = true ) {
 		this.seq.load( tones );
 		this.seq.start( label, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqClear
+	DESCRIPTION:		Clear sequence from memory.
+	----------------------------------------------------------------------------- */
 	seqClear() {
 		this.seq.clear();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqAdd
+	DESCRIPTION:		Appends a single note to sequencer.
+	----------------------------------------------------------------------------- */
 	seqAdd( btn ) {
 		this.seq.add( btn )
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqStart
+	DESCRIPTION:		Begin playback of sequence in memory.
+	----------------------------------------------------------------------------- */
 	seqStart( label, light = true, tone = true ) {
 		this.seq.start( label, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqEnd
+	DESCRIPTION:		Triggered upon sequence completion.
+	----------------------------------------------------------------------------- */
 	seqEnd( label ) {
 		if ( typeof this.sysMem.seqEnd === "function" ) {
 			this.sysMem.seqEnd( label );
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::playBip
+	DESCRIPTION:		Plays a short 'bip' with light, sound, or both.
+	----------------------------------------------------------------------------- */
 	playBip( btn = 7, label, light = false, tone = true ) {
 		var tmpThis = this;
 		setTimeout( function() {
@@ -836,6 +924,10 @@ class OpSys {
 		}, 125);
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::blast
+	DESCRIPTION:		Turns on/off a button's associated light/tone.
+	----------------------------------------------------------------------------- */
 	blast( btn, state = true, light = true, tone = true ) {
 		if ( light )
 			this.hw.light( btn, state );
@@ -843,11 +935,19 @@ class OpSys {
 			this.hw.tone( btn, state );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::flash
+	DESCRIPTION:		Flashes a button's light/tone.
+	----------------------------------------------------------------------------- */
 	flash( btn, label, cycles = 0, light = true, tone = true ) {
 		this.hw.flasher.reset();
 		this.hw.flasher.start( btn, label, cycles, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clear
+	DESCRIPTION:		Turns off all lights/tones.
+	----------------------------------------------------------------------------- */
 	clear() {
 		this.hw.flasher.stop();
 		for ( var num = 0; num < NUM_BTNS; num++ ) {
@@ -856,6 +956,11 @@ class OpSys {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnClick
+	DESCRIPTION:		Processes presses of auxiliary buttons (start, select,
+				repeat, play, and space).
+	----------------------------------------------------------------------------- */
 	btnClick( btnName ) {
 		if ( typeof this.sysMem.btnClick == "function") {
 			this.sysMem.btnClick( btnName );
@@ -863,6 +968,11 @@ class OpSys {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Boot
+DESCRIPTION:		Main startup program.  Plays an ascending sequence of
+			lights/tones, and loads picker.
+----------------------------------------------------------------------------- */
 class Boot {
 	constructor( os ) {
 		this.os = os;
@@ -873,11 +983,20 @@ class Boot {
 		this.os.seqStart();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Boot::seqEnd
+	DESCRIPTION:		Upon completion of startup 'animation', loads Picker
+				into memory.
+	----------------------------------------------------------------------------- */
 	seqEnd() {
 		this.os.selectPgm();
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Picker
+DESCRIPTION:		Logic for game selection interface
+----------------------------------------------------------------------------- */
 class Picker {
 	constructor( os, id = 0 ) {
 		this.os = os;
@@ -902,6 +1021,11 @@ class Picker {
 		this.os.doc.setManpage('picker');
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::clockTick
+	DESCRIPTION:		Logic triggered by OpSys clock.  Passes clock pulses on
+				to program held in sysMem.
+	----------------------------------------------------------------------------- */
 	clockTick() {
 		if ( !this.select ) {
 			this.os.flash( this.btnNum, '', 0, true, false );
@@ -909,6 +1033,10 @@ class Picker {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::button
+	DESCRIPTION:		Processes presses of main game buttons.
+	----------------------------------------------------------------------------- */
 	button( btn, state ) {
 		if ( this.doPick && state ) {
 			this.btnNum = btn;
@@ -916,6 +1044,11 @@ class Picker {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::btnClick
+	DESCRIPTION:		Processes presses of auxiliary buttons (start, select,
+				repeat, play, and space).
+	----------------------------------------------------------------------------- */
 	btnClick( btnName ) {
 		switch ( btnName ) {
 		case 'start':
@@ -935,6 +1068,11 @@ class Picker {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::endBip
+	DESCRIPTION:		Triggered by the end of a 'bip'; used trigger program
+				loading into os.sysMem.
+	----------------------------------------------------------------------------- */
 	endBip( label ) {
 		switch( label ) {
 		case 'loadPgm':
@@ -945,10 +1083,10 @@ class Picker {
 	}
 };
 
-/*
-Organ
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Organ
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Organ {
 	constructor( os, id ) {
 		this.os = os;
@@ -969,10 +1107,10 @@ class Organ {
 	}
 };
 
-/*
-Song Writer
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Song_Writer
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Song_Writer {
 	constructor( os, id ) {
 		this.os = os;
@@ -1029,10 +1167,10 @@ class Song_Writer {
 	}
 };
 
-/*
-Repeat
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Repeat
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Repeat {
 	constructor( os, id ) {
 		this.os = os;
@@ -1126,10 +1264,10 @@ class Repeat {
 	}
 };
 
-/*
-Torpedo
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Torpedo
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Torpedo {
 	constructor( os, id ) {
 		this.os = os;
@@ -1195,10 +1333,10 @@ class Torpedo {
 	}
 };
 
-/*
-Tag-It
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Tag-It
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Tag_It {
 	constructor( os, id ) {
 		this.os = os;
@@ -1296,10 +1434,10 @@ class Tag_It {
 	}
 };
 
-/*
-Roulette
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Roulette
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Roulette {
 	constructor( os, id ) {
 		this.os = os;
@@ -1358,10 +1496,11 @@ class Roulette {
 
 };
 
-/*
-Baseball
-*/
 
+/* -----------------------------------------------------------------------------
+CLASS:			Baseball
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Baseball {
 	constructor( os, id ) {
 		this.os = os;
@@ -1421,6 +1560,10 @@ class Baseball {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Scoreboard
+DESCRIPTION:		Monitors and displays progress for Baseball.
+----------------------------------------------------------------------------- */
 class Scoreboard{
 	constructor( game ) {
 		this.game = game;
@@ -1623,10 +1766,10 @@ class Repeat_Plus {
 	}
 };
 
-/*
-Treasure Hunt
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Treasure_Hunt
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Treasure_Hunt {
 	constructor( os, id ) {
 		this.os = os;
@@ -1721,10 +1864,10 @@ class Treasure_Hunt {
 	}
 };
 
-/*
-Compete
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Compete
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Compete {
 	constructor( os, id ) {
 		this.os = os;
@@ -1854,10 +1997,10 @@ class Compete {
 
 };
 
-/*
-Fire Away
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Fire_Away
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Fire_Away {
 	constructor( os, id ) {
 		this.os = os;
@@ -1998,10 +2141,10 @@ class Fire_Away {
 	}
 };
 
-/*
-Hide'N Seek
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Hide_N_Seek
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Hide_N_Seek {
 	constructor( os, id ) {
 		this.os = os;
@@ -2028,9 +2171,11 @@ class Hide_N_Seek {
 		// Only process button press if game isn't over
 		if ( this.gameOver || btn < 8 || btn > 11)
 			return;
+		// Are we accepting presses at this time?
 		if ( this.getInput || !state ) {
 			this.os.blast( btn, state );
 		}
+		// Was the button pressed, or released?
 		if ( state ) {
 			this.presses[ this.tries++ ] = btn;
 		} else {
