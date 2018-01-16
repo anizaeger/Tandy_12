@@ -2179,6 +2179,7 @@ class Hide_N_Seek {
 class Debug {
 	constructor() {
 		this.registers = {};
+		this.doDebug = false;
 	}
 
 	clear() {
@@ -2216,16 +2217,18 @@ class Debug {
 	}
 
 	genTable() {
-		var dbgHtml = 'Registers:<br />';
-		dbgHtml += '<table width=100%>';
-		for ( var label in this.registers ) {
-			dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
-			for ( var key in this.registers[ label ]) {
-				dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+		if ( this.doDebug ) {
+			var dbgHtml = 'Registers:<br />';
+			dbgHtml += '<table width=100%>';
+			for ( var label in this.registers ) {
+				dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
+				for ( var key in this.registers[ label ]) {
+					dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+				}
 			}
+			dbgHtml += '</table>';
+			document.getElementById('registers').innerHTML = dbgHtml;
 		}
-		dbgHtml += '</table>';
-		document.getElementById('registers').innerHTML = dbgHtml;
 	}
 
 	update( label, memory ) {
@@ -2238,12 +2241,29 @@ class Debug {
 	}
 
 	print() {
-		for ( var label in this.registers ) {
-			for ( var key in this.registers[ label ]) {
-				if ( hw.power ) {
-					document.getElementById( key ).innerHTML = this.registers[ label ][ key ];
+		if ( this.doDebug ) {
+			for ( var label in this.registers ) {
+				for ( var key in this.registers[ label ]) {
+					if ( hw.power ) {
+						document.getElementById( key ).innerHTML = this.registers[ label ][ key ];
+					}
 				}
 			}
+		}
+	}
+
+	clear() {
+		document.getElementById( 'registers' ).innerHTML = ''
+	}
+
+	toggle() {
+		this.doDebug = !this.doDebug;
+		if ( this.doDebug ) {
+			this.genTable();
+			this.update();
+			this.print();
+		} else {
+			this.clear();
 		}
 	}
 };
