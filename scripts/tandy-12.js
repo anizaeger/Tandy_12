@@ -2252,17 +2252,16 @@ class Debug {
 		}
 	}
 
-	clear() {
-		document.getElementById( 'registers' ).innerHTML = ''
-	}
-
 	toggle() {
 		this.doDebug = !this.doDebug;
+		var dbgBtn = document.getElementById('dbgBtn');
 		if ( this.doDebug ) {
+			dbgBtn.innerHTML = 'Enabled';
 			this.genTable();
 			this.update();
 			this.print();
 		} else {
+			dbgBtn.innerHTML = 'Disabled'
 			this.clear();
 		}
 	}
