@@ -1628,7 +1628,7 @@ class Baseball {
 			this.os.flasher = true;
 			this.btnNum = this.os.randBtn();
 			this.os.clear();
-			this.os.blast( this.btnNum, true );
+			this.os.blast( this.btnNum, true, true, false );
 			this.scoreboard.pitch( this.btnNum );
 		} else if ( this.hit ) {
 			this.hit = false;
