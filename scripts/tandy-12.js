@@ -142,10 +142,22 @@ class Tandy12 {
 		this.os = null;
 		this.doc = new Manpage();
 
-		this.lights = new Array(NUM_BTNS);
-		for ( var light = 0; light < NUM_BTNS; light++ ) {
-			this.lights[ light ] = new Light( this, light );
-			this.lights[ light ].lit( false );
+		this.lights = new Array( NUM_BTNS );
+		for ( var btn = 0; btn < NUM_BTNS; btn++ ) {
+			this.lights[ btn ] = new Light( this, btn );
+			this.lights[ btn ].lit( false );
+
+			var btnMain = document.getElementById( 'btnMain' + btn );
+
+			// Workaround for dynamically-created elements with mouse events provided by Stack Overflow user 'posit labs':
+			// https://stackoverflow.com/questions/28573631/dynamically-creating-elements-and-adding-onclick-event-not-working
+			(function() {
+				var _btn = btn;
+				btnMain.onmousedown = function() { hw.button( _btn, true )};
+				btnMain.onmouseup = function() { hw.button( _btn, false )};
+				btnMain.ontouchstart = function( event ) { hw.touch( event, _btn, true )};
+				btnMain.ontouchend = function( event ) { hw.touch( event, _btn, false )};
+			})();
 		}
 
 		this.flasher = new Flasher( this );
@@ -186,6 +198,15 @@ class Tandy12 {
 				this.os.button( btn, state );
 			}
 		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Tandy12::touch
+	DESCRIPTION:		Handle touchscreen events for main buttons.
+	----------------------------------------------------------------------------- */
+	touch( event, btn, state ) {
+		event.preventDefault();
+		this.button( btn, state );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -335,7 +356,7 @@ class Light {
 	constructor( hw, num ) {
 		this.hw = hw;
 		this.num = num;
-		this.id = 'mainBtn'+this.num
+		this.id = 'btnMain'+this.num
 		this.light = document.getElementById(this.id);
 	}
 
@@ -618,6 +639,7 @@ class Flasher {
 	constructor( hw ) {
 		this.hw = hw;
 		this.reset();
+		this.btn = null;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -626,22 +648,20 @@ class Flasher {
 				accordingly.
 	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( this.run ) {
+		if ( this.flashing ) {
 			if ( this.state ) {
 				if ( this.cycles )
 					++this.count;
 				this.on();
-				this.state = !this.state;
 			} else {
 				this.off();
 				if ( this.cycles && this.count >= this.cycles ) {
 					this.stop();
 					this.hw.seqEnd( this.label );
-				} else {
-					this.state = !this.state;
 				}
 			}
 		}
+		this.state = !this.state;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -649,7 +669,8 @@ class Flasher {
 	DESCRIPTION:		Set flasher mode, cycle count, and label, then start
 				cycling.
 	----------------------------------------------------------------------------- */
-	start( btn, label, cycles = 0, light, tone ) {
+	start( btn, label, cycles, light, tone ) {
+		this.reset();
 		this.light = light;
 		this.tone = tone ;
 		this.btn = btn;
@@ -657,13 +678,15 @@ class Flasher {
 		this.label = label;
 		this.cycles = cycles;
 
-		if ( !( this.light || this.tone )) {
-			this.light = true;
-			this.tone = true;
-		}
-
 		this.count = 0;
-		this.run = true;
+		this.run();
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Begin cycling flasher.
+	----------------------------------------------------------------------------- */
+	run() {
+		this.flashing = true;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -671,8 +694,8 @@ class Flasher {
 	DESCRIPTION:		Stop flasher and reinitialize settings.
 	----------------------------------------------------------------------------- */
 	stop() {
-		this.reset();
 		this.off();
+		this.flashing = false;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -680,8 +703,6 @@ class Flasher {
 	DESCRIPTION:		Initialize settings
 	----------------------------------------------------------------------------- */
 	reset() {
-		this.run = false;
-		this.state = false;
 		this.light = false;
 		this.tone = false;
 	}
@@ -691,10 +712,12 @@ class Flasher {
 	DESCRIPTION:		Turn on specified lights and tone.
 	----------------------------------------------------------------------------- */
 	on() {
-		if ( this.light )
+		if ( this.light ) {
 			this.hw.light( this.btn, true );
-		if ( this.tone )
+		}
+		if ( this.tone ) {
 			this.hw.tone( this.btn, true );
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1010,7 +1033,7 @@ class OpSys {
 	DESCRIPTION:		Flashes a button's light/tone.
 	----------------------------------------------------------------------------- */
 	flash( btn, label, cycles = 0, light = true, tone = true ) {
-		this.hw.flasher.reset();
+		this.hw.flasher.stop();
 		this.hw.flasher.start( btn, label, cycles, light, tone );
 	}
 
@@ -1088,7 +1111,7 @@ class Picker {
 			'fire-away',
 			'hide-n-seek'
 		]
-		this.os.doc.setManpage('picker');
+		this.os.doc.setManpage( 'picker' );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1098,8 +1121,8 @@ class Picker {
 	----------------------------------------------------------------------------- */
 	clockTick() {
 		if ( !this.select ) {
-			this.os.flash( this.btnNum, '', 0, true, false );
 			this.select = true;
+			this.os.flash( this.btnNum, '', 0, true, false );
 		}
 	}
 
@@ -1147,7 +1170,7 @@ class Picker {
 		switch( label ) {
 		case 'loadPgm':
 			this.os.sysMem = null;
-			this.os.sysMem = new (eval( PROGS[ this.btnNum ]))( this.os, this.btnNum );
+			this.os.sysMem = new ( eval( PROGS[ this.btnNum ]))( this.os, this.btnNum );
 			break;
 		}
 	}
@@ -2602,9 +2625,19 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		for ( var c = 0; c < NUM_COLS; c++ ) {
 			var cell = row.insertCell( c );
 			var btnNum = ( c * NUM_ROWS ) + r;
-			var boardHtml = '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += '<div class="btnText" style="font-size:10pt;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + btnTxt[btnNum] + '</div>';
-			cell.innerHTML = boardHtml;
+			var btnMain = document.createElement('div');
+			var btnCaption = document.createElement('div');
+			var btnCaptionTxt = document.createTextNode( btnTxt [ btnNum ] );
+
+			btnMain.className = 'btnMain';
+			btnMain.id = 'btnMain' + btnNum;
+			btnMain.innerHTML = btnNum + 1;
+
+			btnCaption.className = 'btnCaption';
+			btnCaption.appendChild( btnCaptionTxt );
+
+			cell.appendChild( btnMain );
+			cell.appendChild( btnCaption );
 		}
 	}
 

@@ -34,8 +34,9 @@ div.btnMain {
 	border-radius:7px;
 }
 
-.btnText {
+.btnCaption {
 	color: white;
+	font-size: 10pt;
 }
 
 /* The switch - the box around the slider */
