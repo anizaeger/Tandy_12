@@ -43,6 +43,21 @@ const PROGS = [
 	'Hide_N_Seek'
 ];
 
+const HUES = [
+	'Indigo',
+	'Orange',
+	'Magenta',
+	'SpringGreen',
+	'Blue',
+	'Cyan',
+	'Yellow',
+	'Salmon',
+	'Lime',
+	'Red',
+	'Violet',
+	'Brown'
+];
+
 // Various constants for configuring user interface.
 const NUM_BTNS = 12;
 const NUM_ROWS = 4;
@@ -330,8 +345,7 @@ class Light {
 	RETURNS:		Color of associated light number
 	----------------------------------------------------------------------------- */
 	hue( num ) {
-		var hues = ["Indigo","Orange","Magenta","SpringGreen","Blue","Cyan","Yellow","Salmon","Lime","Red","Violet","Brown"];
-		return hues[ num ];
+		return HUES[ num ];
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1577,7 +1591,7 @@ class Baseball {
 			this.pitchBall = true;
 			this.hit = false;
 			this.run = false;
-			this.scoreboard.pitch();
+			this.scoreboard.windup();
 			break;
 		case 'playhit':
 			this.hitBall();
@@ -1592,6 +1606,7 @@ class Baseball {
 			this.btnNum = this.os.randBtn();
 			this.os.clear();
 			this.os.blast( this.btnNum, true );
+			this.scoreboard.pitch( this.btnNum );
 		} else if ( this.hit ) {
 			this.hit = false;
 			this.os.flash( this.btnNum, 'hit', 3 );
@@ -1637,35 +1652,74 @@ class Scoreboard{
 			'Double',
 			'Out'
 		];
+		this.manpage = document.getElementById('manpage');
+		this.scoreboard = this.manpage.contentDocument? this.manpage.contentDocument: this.manpage.contentWindow.document;
 		this.outs = null;
+
+		var hitHtml = '';
+
+		for ( var row = 0; row < NUM_ROWS; row++ ) {
+			hitHtml += '<tr>';
+			for ( var col = 0; col < NUM_COLS; col++ ) {
+				var h = col * NUM_ROWS + row;
+				hitHtml += '<td>';
+				hitHtml += "<div id='outcome" + h + "' style='border-style: solid; border-radius: 25px; font-size: 10pt; height: 50px; width: 50px; text-align: center; vertical-align: middle;'>";
+				hitHtml += this.outcome[ h ];
+				hitHtml += '</div></td>';
+			}
+			hitHtml += '</tr>';
+		}
+
+		this.scoreboard.getElementById( 'hitType' ).innerHTML = hitHtml;
+
 		this.start()
 	}
 
 	start() {
+		this.gameOver = false;
 		this.inning = 1;
 		this.outs = 0;
 		this.half = false;
-		this.score = [ 0, 0 ];
+		this.score = [[ 'Away' ], [ 'Home' ]];
+		this.rhe = [];
+		for ( var i = 0; i <= 1; i++ ) {
+			this.rhe[ i ] = [];
+			this.rhe[ i ][ 'r' ] = 0;
+			this.rhe[ i ][ 'h' ] = 0;
+			this.rhe[ i ][ 'e' ] = 0;
+		}
 		this.bases = [ false, false, false, false ];
 	}
 	
-	pitch() {
+	windup() {
+		if ( this.gameOver ) {
+			this.start()
+		}
 		this.bases[0] = true;
 	}
 
+	pitch( btn ) {
+		for ( var b = 0; b < NUM_BTNS; b++ ) {
+			var cell = this.scoreboard.getElementById( 'outcome' + b )
+			cell.style.backgroundColor = '';
+		}
+		
+		var cell = this.scoreboard.getElementById( 'outcome' + btn );
+		cell.style.backgroundColor = HUES[ btn ];
+	}
+
 	hit( btn ) {
+		this.advance = 0;
 		switch (this.outcome[ btn ]) {
-		case 'Single':		// Single
-			this.advance = 1;
-			break;
-		case 'Double':		// Double
-			this.advance = 2;
-			break;
-		case 'Triple':		// Triple
-			this.advance = 3;
-			break;
-		case 'Home Run':	// Home Run
-			this.advance = 4;
+		case 'Home Run':	// Single
+			this.advance += 1;
+		case 'Triple':		// Double
+			this.advance += 1;
+		case 'Double':		// Triple
+			this.advance += 1;
+		case 'Single':		// Home Run
+			this.advance += 1;
+			this.rhe[ this.half ? 1 : 0 ][ 'h' ] != null ? this.rhe[ this.half ? 1 : 0 ][ 'h' ]++ : this.rhe[ this.half ? 1 : 0 ][ 'h' ] = 1;
 			break;
 		case 'Out':		// Out
 			this.outs++
@@ -1676,7 +1730,13 @@ class Scoreboard{
 	run() {
 		if ( this.advance-- > 0 ) {
 			if ( this.bases.pop()) {
-				this.score[ this.half ? 1 : 0 ]++
+				var half = this.half ? 1 : 0;
+				this.rhe[ half ][ 'r' ]++;
+				if ( isNaN( this.score[ half ][ this.inning ])) {
+					this.score[ half ][ this.inning ] = 1;
+				} else {
+					this.score[ half ][ this.inning ]++;
+				}
 			}
 			this.bases.unshift( false );
 			return true;
@@ -1688,39 +1748,81 @@ class Scoreboard{
 
 	endPlay() {
 		if ( this.outs == 3 ) {
-			this.bases = [ false, false, false, false ];
-			this.outs = 0;
-			this.half = !this.half;
-			if ( !this.half ) {
-				this.inning++;
-			}
+			this.retire();
 		}
-		this.update()
+		this.update();
+	}
+
+	retire() {
+		this.bases = [ false, false, false, false ];
+		this.outs = 0;
+		this.half = !this.half;
+		if ( !this.half ) {
+			this.endInning();
+		}
+	}
+
+	endInning() {
+		if ( this.inning >= 9 && ( this.rhe[ 0 ][ 'r' ] != this.rhe[ 1 ][ 'r' ])) {
+			this.gameOver = true;
+		} else {
+			this.inning++;
+		}
 	}
 
 	update() {
 		const AWAY_TEAM = 0;
 		const HOME_TEAM = 1;
-		var manpage = document.getElementById('manpage');
-		var scoreboard = manpage.contentDocument? manpage.contentDocument: manpage.contentWindow.document;
+
+		var lineScore = function( game ) {
+			var scorebox = '<table width=100%>';
+			scorebox += '<tr>';
+			for ( var inning = 0; inning <= ( game.inning <= 9 ? 9 : game.inning ); inning++ ) {
+				scorebox += '<td>' + ( inning == 0 ? 'Team' : inning ) + '</td>'
+			}
+			scorebox += '<td>&nbsp;</td><td>R</td><td>H</td><td>E</td>'
+			scorebox += '</tr>';
+			for ( var half = 0; half <= 1; half++ ) {
+				scorebox += '<tr id=team' + half + '>';
+				for ( var inning = 0; inning <= ( game.inning <= 9 ? 9 : game.inning ); inning++ ) {
+					scorebox += '<td>' + ( game.score[ half ][ inning ] != null ? game.score[ half ][ inning ] : 0 ) + '</td>'
+				}
+				scorebox += '<td>&nbsp;</td><td>' + game.rhe[ half ][ 'r' ] + '</td><td>' + game.rhe[ half ][ 'h' ] + '</td><td>' + game.rhe[ half ][ 'e' ] + '</td>'
+				scorebox += '</tr>';
+			}
+			scorebox += '</table>';
+			return scorebox;
+		};
+
 		var halfTxt;
 		if ( this.half ) {
 			halfTxt = "Bottom";
 		} else {
 			halfTxt = "Top";
 		}
-		scoreboard.getElementById( 'half' ).innerHTML=halfTxt;
-		scoreboard.getElementById( 'inning' ).innerHTML=this.inning;
+
 		for ( var base = 0; base < 4; base++ ) {
 			if ( this.bases[base] ) {
-				scoreboard.getElementById( 'base'+base ).innerHTML='*';
+				this.scoreboard.getElementById( 'base'+base ).innerHTML='*';
 			} else {
-				scoreboard.getElementById( 'base'+base ).innerHTML='&nbsp;';
+				this.scoreboard.getElementById( 'base'+base ).innerHTML=null;
 			}
 		}
-		scoreboard.getElementById( 'outs' ).innerHTML=this.outs;
-		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
-		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
+
+		this.scoreboard.getElementById( 'lineScore' ).innerHTML=lineScore( this );
+		if ( this.gameOver ) {
+			if ( this.rhe[ 0 ][ 'r' ] > this.rhe[ 1 ][ 'r' ]) {
+				this.scoreboard.getElementById( 'team0' ).style = "font-weight: bold;";
+			} else {
+				this.scoreboard.getElementById( 'team1' ).style = "font-weight: bold;";
+			}
+			this.scoreboard.getElementById( 'half' ).innerHTML='Final';
+			this.scoreboard.getElementById( 'outs' ).innerHTML=3;
+		} else {
+			this.scoreboard.getElementById( 'outs' ).innerHTML=this.outs;
+			this.scoreboard.getElementById( 'half' ).innerHTML=halfTxt;
+			this.scoreboard.getElementById( 'inning' ).innerHTML=this.inning;
+		}
 	}
 };
 
