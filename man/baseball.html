@@ -2,8 +2,19 @@
 <head>
 	<style>
 		.base {
+			position: relative;
 			height: 60px;
 			width: 60px;
+		}
+
+
+		.base canvas, .plate {
+			position: absolute;
+		}
+
+		.plate {
+			height: 100%;
+			width: 100%;
 			text-align: center;
 			line-height: 60px;
 		}
@@ -24,17 +35,37 @@
 					<table id=diamond>
 						<tr>
 							<td />
-							<td><div class='base' id='base2'>&nbsp;</div></td>
+							<td>
+								<div class='base'>
+									<div class='plate' id='base2'></div>
+									<canvas id='plate2'></canvas>
+								</div>
+							</td>
 							<td />
 						</tr>
 						<tr>
-							<td><div class='base' id='base3'>&nbsp;</div></td>
+							<td>
+								<div class='base'>
+									<canvas id='plate3'></canvas>
+									<div class='plate' id='base3'></div>
+								</div>
+							</td>
 							<td />
-							<td><div class='base' id='base1'>&nbsp;</div></td>
+							<td>
+								<div class='base'>
+									<canvas id='plate1'></canvas>
+									<div class='plate' id='base1'></div>
+								</div>
+							</td>
 						</tr>
 						<tr>
 							<td />
-							<td><div class='base' id='base0'>&nbsp;</div></td>
+							<td>
+								<div class='base'>
+									<canvas id='plate0'></canvas>
+									<div class='plate' id='base0'></div>
+								</div>
+							</td>
 							<td />
 						</tr>
 					</table>

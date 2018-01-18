@@ -1712,6 +1712,26 @@ class Scoreboard{
 
 		this.scoreboard.getElementById( 'hitType' ).innerHTML = hitHtml;
 
+		for ( var b = 0; b < 4; b++ ) {
+			var plateId = 'plate' + b
+			var plate = this.scoreboard.getElementById( plateId );
+			if ( plate.getContext ) {
+				var context = plate.getContext('2d');
+				context.beginPath();
+				context.moveTo( 0, 30 );
+				context.lineTo( 30, 60 );
+				context.lineTo( 60, 30 );
+				if ( b == 0 ) {
+					context.lineTo( 60, 0 );
+					context.lineTo( 0, 0 );
+				} else {
+					context.lineTo( 30, 0 );
+				}
+				context.closePath();
+				context.stroke();
+			}
+		}
+
 		this.start()
 	}
 
@@ -1843,7 +1863,7 @@ class Scoreboard{
 
 		for ( var base = 0; base < 4; base++ ) {
 			if ( this.bases[base] ) {
-				this.scoreboard.getElementById( 'base'+base ).innerHTML='*';
+				this.scoreboard.getElementById( 'base'+base ).innerHTML='&#x26be;';
 			} else {
 				this.scoreboard.getElementById( 'base'+base ).innerHTML=null;
 			}
