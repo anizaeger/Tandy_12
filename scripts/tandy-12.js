@@ -557,6 +557,10 @@ class Clock {
 		this.hw.clockTick( this.timeStamp++ );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::start
+	DESCRIPTION:		Initialize and seqStart clock.
+	----------------------------------------------------------------------------- */
 	start() {
 		if ( this.hw.power && this.timer == null ) {
 			this.timeStamp = 0;
@@ -566,7 +570,7 @@ class Clock {
 
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Clock::stop
-	DESCRIPTION:		Stop clock.
+	DESCRIPTION:		Pause clock.
 	----------------------------------------------------------------------------- */
 	stop() {
 		if ( typeof this.timer !== 'undefined' ) {
@@ -575,6 +579,11 @@ class Clock {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::advance
+	DESCRIPTION:		Manually-tick clock, stopping automatic timer if
+				necessary.
+	----------------------------------------------------------------------------- */
 	advance() {
 		if ( this.hw.power ) {
 			this.stop();
@@ -582,6 +591,10 @@ class Clock {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::run
+	DESCRIPTION:		Resume the clock.
+	----------------------------------------------------------------------------- */
 	run() {
 		this.tick();
 		var tmpThis = this;
@@ -852,13 +865,14 @@ class OpSys {
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
-		this.debug();
 
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
 				this.sysMem.clockTick( this.timeStamp );
 			}
 		}
+
+		this.debug();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -932,6 +946,7 @@ class OpSys {
 		if ( typeof this.sysMem.button == "function" ) {
 			this.sysMem.button( btn, state );
 		}
+		this.debug();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1033,7 +1048,6 @@ class OpSys {
 	DESCRIPTION:		Flashes a button's light/tone.
 	----------------------------------------------------------------------------- */
 	flash( btn, label, cycles = 0, light = true, tone = true ) {
-		this.hw.flasher.stop();
 		this.hw.flasher.start( btn, label, cycles, light, tone );
 	}
 
@@ -1058,6 +1072,7 @@ class OpSys {
 		if ( typeof this.sysMem.btnClick == "function") {
 			this.sysMem.btnClick( btnName );
 		}
+		this.debug();
 	}
 };
 
@@ -1111,6 +1126,7 @@ class Picker {
 			'fire-away',
 			'hide-n-seek'
 		]
+		this.os.flash( this.btnNum, '', 0, true, false );
 		this.os.doc.setManpage( 'picker' );
 	}
 
@@ -1120,9 +1136,8 @@ class Picker {
 				to program held in sysMem.
 	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( !this.select ) {
+		if ( !this.select && !hw.flasher.state ) {
 			this.select = true;
-			this.os.flash( this.btnNum, '', 0, true, false );
 		}
 	}
 
@@ -1133,6 +1148,7 @@ class Picker {
 	button( btn, state ) {
 		if ( this.doPick && state ) {
 			this.btnNum = btn;
+			this.os.flash( this.btnNum, '', 0, true, false );
 			this.select = false;
 		}
 	}
@@ -1152,10 +1168,11 @@ class Picker {
 			break;
 		case 'select':
 			if ( this.select ){
-				this.select = false;
 				if ( ++this.btnNum >= NUM_BTNS ) {
 					this.btnNum = 0;
 				}
+				this.os.flash( this.btnNum, '', 0, true, false );
+				this.select = false;
 			}
 			break;
 		}
