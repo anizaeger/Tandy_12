@@ -1703,8 +1703,10 @@ class Scoreboard{
 			for ( var col = 0; col < NUM_COLS; col++ ) {
 				var h = col * NUM_ROWS + row;
 				hitHtml += '<td>';
-				hitHtml += "<div id='outcome" + h + "' style='border-style: solid; border-radius: 25px; font-size: 10pt; height: 50px; width: 50px; text-align: center; vertical-align: middle;'>";
-				hitHtml += this.outcome[ h ];
+				hitHtml += "<div class='hittype' id='outcome" + h + "'>";
+				hitHtml += "<div class='hitcaption'>";
+				hitHtml += "<span class='hittext'>" + this.outcome[ h ] + '</span>';
+				hitHtml += '</div>';
 				hitHtml += '</div></td>';
 			}
 			hitHtml += '</tr>';

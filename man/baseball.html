@@ -1,12 +1,29 @@
 <html>
 <head>
 	<style>
+		.hittype {
+			border-style: solid;
+			border-radius: 50%;
+			height: 50px;
+			width: 50px;
+			display: table;
+		}
+
+		.hitcaption {
+			display: table-cell;
+			vertical-align: middle;
+			text-align: center;
+		}
+
+		.hittext {
+			font-size: 10pt;
+		}
+
 		.base {
 			position: relative;
 			height: 60px;
 			width: 60px;
 		}
-
 
 		.base canvas, .plate {
 			position: absolute;
@@ -29,7 +46,7 @@
 		<table>
 			<tr>
 				<td>
-					<table id=hitType width=100% border=1></table>
+					<table id=hitType width=100%></table>
 				</td>
 				<td>
 					<table id=diamond>
