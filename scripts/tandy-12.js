@@ -264,6 +264,7 @@ class Tandy12 {
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
 		if ( this.power && this.os != null ) {
+			this.osc.wake();
 			this.flasher.clockTick();
 			this.os.clockTick( timeStamp );
 		}
@@ -404,7 +405,10 @@ class Osc {
 	ATTRIBUTION:		https://gist.github.com/laziel/7aefabe99ee57b16081c
 	----------------------------------------------------------------------------- */
 	constructor() {
-		this.context = null, this.usingWebAudio = true, this.playing = false;
+		this.context = null;
+		this.usingWebAudio = true;
+		this.listener = false;
+		this.playing = false;
 
 		try {
 			if ( typeof AudioContext !== 'undefined' ) {
@@ -419,20 +423,7 @@ class Osc {
 			this.usingWebAudio = false;
 		}
 
-		if ( this.usingWebAudio && this.context.state === 'suspended' ) {
-			var resume = function() {
-				hw.osc.context.resume();
-
-				setTimeout( function() {
-					if ( hw.osc.context.state === 'running' ) {
-						document.body.removeEventListener( 'touchend', resume, false );
-					}
-				}, 0 );
-			};
-
-			document.body.addEventListener('touchend', resume, false);
-
-		}
+		this.wake();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -469,6 +460,27 @@ class Osc {
 				alert( "*** BUG - Osc::play( " + tone + ", " + state + " )\n" + "Error - " + e );
 				this.usingWebAudio = false;
 			}
+		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::wake
+	DESCRIPTION:		Resumes web audio in the event that it gets suspended.
+	ATTRIBUTION:		https://gist.github.com/laziel/7aefabe99ee57b16081c
+	----------------------------------------------------------------------------- */
+	wake() {
+		if ( this.usingWebAudio && this.context.state === 'suspended' ) {
+			var resume = function() {
+				hw.osc.context.resume();
+
+				setTimeout( function() {
+					if ( hw.osc.context.state === 'running' ) {
+						document.body.removeEventListener( 'touchend', resume, false );
+					}
+				}, 0 );
+			};
+
+			document.body.addEventListener('touchend', resume, false);
 		}
 	}
 };
