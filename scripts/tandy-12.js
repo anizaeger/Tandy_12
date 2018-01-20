@@ -529,22 +529,43 @@ class Clock {
 		this.default();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::ratioToHz
+	DESCRIPTION:		Convert ratio to pulses-per-second based on allowable
+				min/max clock Hz.
+	----------------------------------------------------------------------------- */
 	ratioToHz( ratio ) {
 		return ( this.clockHzMax  * ratio );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::msToHz
+	DESCRIPTION:		Convert clock pulse delay in ms to frequency in Hz.
+	----------------------------------------------------------------------------- */
 	msToHz( ms ) {
 		return 1000 / ms;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::hzToMs
+	DESCRIPTION:		Convert clock frequency in Hz to pulse delay in ms.
+	----------------------------------------------------------------------------- */
 	hzToMs( hz ) {
 		return Math.round( 1000 / hz );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::msToRatio
+	DESCRIPTION:		Convert clock pulse delay in ms to decimal ratio.
+	----------------------------------------------------------------------------- */
 	msToRatio( ms ) {
 		return ( ms / this.clockMsMax ) * 10000;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::hzToRatio
+	DESCRIPTION:		Convert clock frequency in Hz to decimal ratio.
+	----------------------------------------------------------------------------- */
 	hzToRatio( hz ) {
 		return ( hz / this.clockHzMax ) * 10000;
 	}
@@ -615,6 +636,11 @@ class Clock {
 		}, this.clockRate );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::set
+	DESCRIPTION:		Set clock rate to new value based on clock control
+				settings.
+	----------------------------------------------------------------------------- */
 	set() {
 		var ms = this.clockMs.value;
 		if ( ms >= this.clockMsMin && ms <= this.clockMsMax ) {
@@ -647,6 +673,10 @@ class Clock {
 		this.clockRate = newMs;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::default
+	DESCRIPTION:		Reset clock rate to default value.
+	----------------------------------------------------------------------------- */
 	default() {
 		var ms = this.hzToMs( CONFIG.getClockHzDef());
 		var ratio = this.msToRatio( ms )
@@ -897,10 +927,8 @@ class OpSys {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		OpSys::getBootProg
-	DESCRIPTION:		Initialize bootup program selected by dropdown menu in
-				debugging pane.
-	RETURNS			Identifier of program to boot into.
+	FUNCTION:		OpSys::debug
+	DESCRIPTION:		Update information in debug pane.
 	----------------------------------------------------------------------------- */
 	debug() {
 		DEBUG.clear();
@@ -910,6 +938,12 @@ class OpSys {
 		DEBUG.genTable();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::getBootProg
+	DESCRIPTION:		Initialize bootup program selected by dropdown menu in
+				debugging pane.
+	RETURNS			Identifier of program to boot into.
+	----------------------------------------------------------------------------- */
 	getBootProg() {
 		var bootProg = document.getElementById('STARTUP_PROG');
 		var progName = bootProg.options[bootProg.selectedIndex].value;
@@ -2654,7 +2688,9 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 	];
 	var boardHtml = ""
 
-	// Generate Debugging Interface
+	/*
+	 * Generate Boot Selector
+	 */
 	var progs = [
 		'Boot',
 		'Picker'
@@ -2668,12 +2704,16 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		dbgBootprog.add( opt );
 	}
 
-	// Generate Main Console
+	/*
+	 * Generate Main Console
+	 */
 	var playfield = document.getElementById("playfield");
 
 	for ( var r = 0; r < NUM_ROWS; r++ ) {
 		var row = playfield.insertRow( r );
 		for ( var c = 0; c < NUM_COLS; c++ ) {
+
+			// Retrieve elements
 			var cell = row.insertCell( c );
 			var btnNum = ( c * NUM_ROWS ) + r;
 			var btnMain = document.createElement('div');
