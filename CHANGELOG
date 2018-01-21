@@ -1,3 +1,38 @@
+### v0.3.0-rc1 ###
+	*** CHANGES
+		UI and Frontend
+			- Modify method of playfield generation. Now uses insertRow() and insertCell() rather than static text and insertHTML.
+			- Dynamically generate playfield without using static text.
+			- Modifications to process touch interactions for mobile devices.
+
+		API and Backend
+			- Added workaround, courtesy of GitHub user 'laziel', to unlock and enable web audio on iOS.
+			- Added flag to indicate when a sound is (should) be playing.
+			- Moved Lights::hues to constant HUES
+
+		Debug
+			- Display contents of Tandy-12 OpSys, OpSys::sysMem, and Sequencer.
+			- Add function to display error messages.
+			- Add button to enable/disable debugging display.
+
+		Baseball
+			- Add basic line score and RHE to display.
+			- Silenced pitch tones.
+
+	*** OPTIMIZATIONS
+		API and Backend
+			- Reduced namespace pollution.
+			- Streamline the flasher to reduce resource usage.
+
+		Boot
+			- Minor code cleanup.
+
+		Picker
+			- Minor modification to streamline game selection.
+
+		Baseball
+			- Improve layout of baseball diamond.
+
 ### v0.2.5 ###
 	*** BUGFIX
 		API and Backend
