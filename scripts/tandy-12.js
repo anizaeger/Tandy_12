@@ -1738,27 +1738,34 @@ class Scoreboard{
 			'Double',
 			'Out'
 		];
-		this.manpage = document.getElementById('manpage');
+		this.manpage = document.getElementById( 'manpage' );
 		this.scoreboard = this.manpage.contentDocument? this.manpage.contentDocument: this.manpage.contentWindow.document;
 		this.outs = null;
 
-		var hitHtml = '';
+		var hitTable = this.scoreboard.getElementById( 'hitTable' )
 
 		for ( var row = 0; row < NUM_ROWS; row++ ) {
-			hitHtml += '<tr>';
+			var hitRow = hitTable.insertRow( -1 );
 			for ( var col = 0; col < NUM_COLS; col++ ) {
-				var h = col * NUM_ROWS + row;
-				hitHtml += '<td>';
-				hitHtml += "<div class='hittype' id='outcome" + h + "'>";
-				hitHtml += "<div class='hitcaption'>";
-				hitHtml += "<span class='hittext'>" + this.outcome[ h ] + '</span>';
-				hitHtml += '</div>';
-				hitHtml += '</div></td>';
-			}
-			hitHtml += '</tr>';
-		}
+				var hitNum = col * NUM_ROWS + row;
+				var cell = hitRow.insertCell( -1 );
 
-		this.scoreboard.getElementById( 'hitType' ).innerHTML = hitHtml;
+				var hittype = document.createElement('div');
+				hittype.className = 'hittype';
+				hittype.id = ( 'outcome' + hitNum );
+
+				var hitcaption = document.createElement('div');
+				hitcaption.className = 'hitcaption';
+
+				var hittext = document.createElement('span');
+				hittext.className = 'hittext';
+				hittext.innerHTML = this.outcome[ hitNum ];
+
+				hitcaption.appendChild( hittext );
+				hittype.appendChild( hitcaption );
+				cell.appendChild( hittype );
+			}
+		}
 
 		for ( var b = 0; b < 4; b++ ) {
 			var plateId = 'plate' + b
@@ -1992,7 +1999,7 @@ class Repeat_Plus {
 
 	loss() {
 		this.getInput = false;
-		this.os.seqLoad([0,0,0,0,7,0,7,0,7,0], 'loss');
+		this.os.seqLoad([ 0,0,0,0,7,0,7,0,7,0 ], 'loss');
 	}
 
 	endBip( label ) {
@@ -2616,16 +2623,30 @@ class Debug {
 
 	genTable() {
 		if ( this.doDebug ) {
-			var dbgHtml = 'Registers:<br />';
-			dbgHtml += '<table width=100%>';
-			for ( var label in this.registers ) {
-				dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
+			// var dbgHtml = 'Registers:<br />';
+			var registers = document.getElementById( 'registers' );
+
+			var dbgTable = document.createElement( 'table' );
+			dbgTable.className = 'dbgTable';
+			for ( var label in this.registers ) { 
+				var dbgHeader = dbgTable.insertRow( -1 );
+				var dbgHead = document.createElement( 'th' );
+				dbgHead.className = 'dbgHead';
+				dbgHead.colSpan = 2;
+				dbgHead.innerHTML = label;
+				dbgHeader.appendChild( dbgHead );
 				for ( var key in this.registers[ label ]) {
-					dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+					var dbgRow = dbgTable.insertRow( -1 );
+					var dbgKey = document.createElement( 'th' );
+					dbgKey.className = 'dbgKey';
+					dbgKey.innerHTML = key;
+					dbgRow.appendChild( dbgKey );
+
+					var dbgVal = dbgRow.insertCell( 1 );
+					dbgVal.id = key;
 				}
 			}
-			dbgHtml += '</table>';
-			document.getElementById('registers').innerHTML = dbgHtml;
+			registers.appendChild( dbgTable );
 		}
 	}
 
@@ -2652,7 +2673,7 @@ class Debug {
 
 	toggle() {
 		this.doDebug = !this.doDebug;
-		var dbgBtn = document.getElementById('dbgBtn');
+		var dbgBtn = document.getElementById( 'dbgBtn' );
 		if ( this.doDebug ) {
 			dbgBtn.innerHTML = 'Enabled';
 			this.genTable();
@@ -2696,10 +2717,10 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		'Picker'
 	]
 
-	var dbgBootprog = document.getElementById('STARTUP_PROG');
+	var dbgBootprog = document.getElementById( 'STARTUP_PROG' );
 
 	for ( var progIdx = 0; progIdx < progs.length; progIdx++ ) {
-		var opt = document.createElement("option");
+		var opt = document.createElement( "option" );
 		opt.text = progs[ progIdx ];
 		dbgBootprog.add( opt );
 	}
@@ -2716,9 +2737,9 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 			// Retrieve elements
 			var cell = row.insertCell( c );
 			var btnNum = ( c * NUM_ROWS ) + r;
-			var btnMain = document.createElement('div');
-			var btnCaption = document.createElement('div');
-			var btnCaptionTxt = document.createTextNode( btnTxt [ btnNum ] );
+			var btnMain = document.createElement( 'div' );
+			var btnCaption = document.createElement( 'div' );
+			var btnCaptionTxt = document.createTextNode( btnTxt [ btnNum ]);
 
 			btnMain.className = 'btnMain';
 			btnMain.id = 'btnMain' + btnNum;

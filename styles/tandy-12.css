@@ -182,3 +182,8 @@ width: 100%; /* Width of the outside container */
 	background: #4CAF50; /* Green background */
 	cursor: pointer; /* Cursor on hover */
 }
+
+/* Debug Registers */
+.dbgTable {
+	width: 100%;
+}
