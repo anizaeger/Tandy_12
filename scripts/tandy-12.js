@@ -160,7 +160,7 @@ class Tandy12 {
 			})();
 		}
 
-		this.flasher = new Flasher( this );
+		this.blinker = new Blinker( this );
 
 		this.setPower();
 	}
@@ -260,12 +260,12 @@ class Tandy12 {
 
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Tandy12::clockTick
-	DESCRIPTION:		Receive ticks from Clock and pass on to Flasher and OpSys.
+	DESCRIPTION:		Receive ticks from Clock and pass on to Blinker and OpSys.
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
 		if ( this.power && this.os != null ) {
 			this.osc.wake();
-			this.flasher.clockTick();
+			this.blinker.clockTick();
 			this.os.clockTick( timeStamp );
 		}
 		DEBUG.print();
@@ -273,7 +273,7 @@ class Tandy12 {
 
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Tandy12::seqEnd
-	DESCRIPTION:		Notify OpSys that Flasher has completed cycle count.
+	DESCRIPTION:		Notify OpSys that Blinker has completed cycle count.
 	----------------------------------------------------------------------------- */
 	seqEnd( label ) {
 		this.os.seqEnd( label )
@@ -687,10 +687,10 @@ class Clock {
 };
 
 /* -----------------------------------------------------------------------------
-CLASS:			Flasher
-DESCRIPTION:		Flash light(s) off and on.
+CLASS:			Blinker
+DESCRIPTION:		Blink light(s) off and on.
 ----------------------------------------------------------------------------- */
-class Flasher {
+class Blinker {
 	constructor( hw ) {
 		this.hw = hw;
 		this.reset();
@@ -698,12 +698,12 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::clockTick
-	DESCRIPTION:		Receive hardware clock pulses and flash lights
+	FUNCTION:		Blinker::clockTick
+	DESCRIPTION:		Receive hardware clock pulses and blink lights
 				accordingly.
 	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( this.flashing ) {
+		if ( this.blinking ) {
 			if ( this.state ) {
 				if ( this.cycles )
 					++this.count;
@@ -720,8 +720,8 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::start
-	DESCRIPTION:		Set flasher mode, cycle count, and label, then start
+	FUNCTION:		Blinker::start
+	DESCRIPTION:		Set blinker mode, cycle count, and label, then start
 				cycling.
 	----------------------------------------------------------------------------- */
 	start( btn, label, cycles, light, tone ) {
@@ -738,23 +738,23 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Begin cycling flasher.
+	FUNCTION:		Begin cycling blinker.
 	----------------------------------------------------------------------------- */
 	run() {
-		this.flashing = true;
+		this.blinking = true;
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::stop
-	DESCRIPTION:		Stop flasher and reinitialize settings.
+	FUNCTION:		Blinker::stop
+	DESCRIPTION:		Stop blinker and reinitialize settings.
 	----------------------------------------------------------------------------- */
 	stop() {
 		this.off();
-		this.flashing = false;
+		this.blinking = false;
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::reset
+	FUNCTION:		Blinker::reset
 	DESCRIPTION:		Initialize settings
 	----------------------------------------------------------------------------- */
 	reset() {
@@ -763,7 +763,7 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::on
+	FUNCTION:		Blinker::on
 	DESCRIPTION:		Turn on specified lights and tone.
 	----------------------------------------------------------------------------- */
 	on() {
@@ -776,7 +776,7 @@ class Flasher {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		Flasher::off
+	FUNCTION:		Blinker::off
 	DESCRIPTION:		Turn off lights and tone.
 	----------------------------------------------------------------------------- */
 	off() {
@@ -1079,6 +1079,14 @@ class OpSys {
 	}
 
 	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::flash
+	DESCRIPTION:		Bips all lights without sound.
+	----------------------------------------------------------------------------- */
+	flash() {
+		this.playBip( [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ], 'flash', true, false );
+	}
+
+	/* -----------------------------------------------------------------------------
 	FUNCTION:		OpSys::blast
 	DESCRIPTION:		Turns on/off a button's associated light/tone.
 	----------------------------------------------------------------------------- */
@@ -1090,11 +1098,11 @@ class OpSys {
 	}
 
 	/* -----------------------------------------------------------------------------
-	FUNCTION:		OpSys::flash
-	DESCRIPTION:		Flashes a button's light/tone.
+	FUNCTION:		OpSys::blink
+	DESCRIPTION:		Blinks a button's light/tone.
 	----------------------------------------------------------------------------- */
-	flash( btn, label, cycles = 0, light = true, tone = true ) {
-		this.hw.flasher.start( btn, label, cycles, light, tone );
+	blink( btn, label, cycles = 0, light = true, tone = true ) {
+		this.hw.blinker.start( btn, label, cycles, light, tone );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -1102,7 +1110,7 @@ class OpSys {
 	DESCRIPTION:		Turns off all lights/tones.
 	----------------------------------------------------------------------------- */
 	clear() {
-		this.hw.flasher.stop();
+		this.hw.blinker.stop();
 		for ( var num = 0; num < NUM_BTNS; num++ ) {
 			this.hw.light( num, false );
 			this.hw.tone( num, false );
@@ -1172,7 +1180,7 @@ class Picker {
 			'fire-away',
 			'hide-n-seek'
 		]
-		this.os.flash( this.btnNum, '', 0, true, false );
+		this.os.blink( this.btnNum, '', 0, true, false );
 		this.os.doc.setManpage( 'picker' );
 	}
 
@@ -1182,7 +1190,7 @@ class Picker {
 				to program held in sysMem.
 	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( !this.select && !hw.flasher.state ) {
+		if ( !this.select && !hw.blinker.state ) {
 			this.select = true;
 		}
 	}
@@ -1194,7 +1202,7 @@ class Picker {
 	button( btn, state ) {
 		if ( this.doPick && state ) {
 			this.btnNum = btn;
-			this.os.flash( this.btnNum, '', 0, true, false );
+			this.os.blink( this.btnNum, '', 0, true, false );
 			this.select = false;
 		}
 	}
@@ -1217,7 +1225,7 @@ class Picker {
 				if ( ++this.btnNum >= NUM_BTNS ) {
 					this.btnNum = 0;
 				}
-				this.os.flash( this.btnNum, '', 0, true, false );
+				this.os.blink( this.btnNum, '', 0, true, false );
 				this.select = false;
 			}
 			break;
@@ -1399,7 +1407,7 @@ class Repeat {
 			this.getInput = true;
 			break;
 		case 'loss':
-			this.flashScore();
+			this.blinkScore();
 			break;
 		case 'gameOver':
 
@@ -1407,15 +1415,15 @@ class Repeat {
 		}
 	}
 
-	flashScore() {
+	blinkScore() {
 		if (( this.seq.len - 1 ) < 12 ) {
 			this.seqEnd( 'gameOver' );
 		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
-			this.os.flash( 0, 'gameOver', 3 );
+			this.os.blink( 0, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
-			this.os.flash( 1, 'gameOver', 3 );
+			this.os.blink( 1, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 34 ) {
-			this.os.flash( 2, 'gameOver', 3 );
+			this.os.blink( 2, 'gameOver', 3 );
 		}
 	}
 };
@@ -1468,7 +1476,8 @@ class Torpedo {
 				var btnCol = this.os.btnCol( btn );
 
 				if ( btnRow == this.subRow || btnCol == this.subCol ) {
-					this.os.playBip();
+					this.os.flash();
+					this.os.playBip( btn );
 				}
 			}
 		}
@@ -1481,7 +1490,7 @@ class Torpedo {
 
 	loss() {
 		this.gameOver = true;
-		this.os.flash( this.sub, 'loss', 3 );
+		this.os.blink( this.sub, 'loss', 3 );
 	}
 
 	seqEnd( label ) {
@@ -1554,27 +1563,27 @@ class Tag_It {
 		if ( this.score < 10 ) {
 			this.seqEnd( 'score' );
 		} else if ( this.score < 20 ) {
-			this.os.flash( 0, 'score', 3 );
+			this.os.blink( 0, 'score', 3 );
 		} else if ( this.score < 30 ) {
-			this.os.flash( 1, 'score', 3 );
+			this.os.blink( 1, 'score', 3 );
 		} else if ( this.score < 40 ) {
-			this.os.flash( 2, 'score', 3 );
+			this.os.blink( 2, 'score', 3 );
 		} else if ( this.score < 50 ) {
-			this.os.flash( 3, 'score', 3 );
+			this.os.blink( 3, 'score', 3 );
 		} else if ( this.score < 60 ) {
-			this.os.flash( 4, 'score', 3 );
+			this.os.blink( 4, 'score', 3 );
 		} else if ( this.score < 70 ) {
-			this.os.flash( 5, 'score', 3 );
+			this.os.blink( 5, 'score', 3 );
 		} else if ( this.score < 80 ) {
-			this.os.flash( 6, 'score', 3 );
+			this.os.blink( 6, 'score', 3 );
 		} else if ( this.score < 90 ) {
-			this.os.flash( 7, 'score', 3 );
+			this.os.blink( 7, 'score', 3 );
 		} else if ( this.score < 100 ) {
-			this.os.flash( 8, 'score', 3 );
+			this.os.blink( 8, 'score', 3 );
 		} else if ( this.score < 110 ) {
-			this.os.flash( 9, 'score', 3 );
+			this.os.blink( 9, 'score', 3 );
 		} else {
-			this.os.flash( 10, 'score', 3 );
+			this.os.blink( 10, 'score', 3 );
 		}
 	}
 
@@ -1623,11 +1632,11 @@ class Roulette {
 				if ( ++this.idx >= 10 ) {
 					this.idx = 0;
 				}
-				this.os.flasher = true;
+				this.os.blinker = true;
 				this.os.clear();
 				this.os.blast( this.wheel[ this.idx ], true, true, false );
 			} else {
-				this.os.flash( this.wheel[ this.idx ], 'gameOver', 3 );
+				this.os.blink( this.wheel[ this.idx ], 'gameOver', 3 );
 				this.btnEnable = true;
 			}
 		}
@@ -1688,14 +1697,14 @@ class Baseball {
 	clockTick() {
 		this.scoreboard.update();
 		if ( this.pitchBall ) {
-			this.os.flasher = true;
+			this.os.blinker = true;
 			this.btnNum = this.os.randBtn();
 			this.os.clear();
 			this.os.blast( this.btnNum, true, true, false );
 			this.scoreboard.pitch( this.btnNum );
 		} else if ( this.hit ) {
 			this.hit = false;
-			this.os.flash( this.btnNum, 'hit', 3 );
+			this.os.blink( this.btnNum, 'hit', 3 );
 		} else if ( this.run ) {
 			this.run = this.scoreboard.run();
 		}
@@ -1710,7 +1719,7 @@ class Baseball {
 		switch( label ) {
 		case 'hit':
 			this.scoreboard.hit( this.btnNum );
-			this.os.flash( this.btnNum, '', 0, true, false );
+			this.os.blink( this.btnNum, '', 0, true, false );
 			this.run = true;
 			break;
 		}
@@ -2011,7 +2020,7 @@ class Repeat_Plus {
 			this.getInput = true;
 			break;
 		case 'loss':
-			this.flashScore();
+			this.blinkScore();
 			break;
 		case 'gameOver':
 
@@ -2019,15 +2028,15 @@ class Repeat_Plus {
 		}
 	}
 
-	flashScore() {
+	blinkScore() {
 		if (( this.seq.len - 1 ) < 12 ) {
 			this.seqEnd( 'gameOver' );
 		} else if (( this.seq.len - 1 ) >= 12 && ( this.seq.len - 1 ) <= 22 ) {
-			this.os.flash( 0, 'gameOver', 3 );
+			this.os.blink( 0, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 23 && ( this.seq.len - 1 ) <= 33 ) {
-			this.os.flash( 1, 'gameOver', 3 );
+			this.os.blink( 1, 'gameOver', 3 );
 		} else if (( this.seq.len - 1 ) >= 34 ) {
-			this.os.flash( 2, 'gameOver', 3 );
+			this.os.blink( 2, 'gameOver', 3 );
 		}
 	}
 };
@@ -2095,10 +2104,10 @@ class Treasure_Hunt {
 			this.loss();
 			break;
 		case 1:
-			this.os.flash( 0, 'score', 3, true, false );
+			this.os.blink( 0, 'score', 3, true, false );
 			break;
 		case 2:
-			this.os.flash([ 0, 1 ], 'score', 3, true, false );
+			this.os.blink([ 0, 1 ], 'score', 3, true, false );
 			break;
 		case 3:
 			this.win();
@@ -2213,7 +2222,7 @@ class Compete {
 			if ( this.curBtn == this.randBtn && this.steps > 3 ) {
 				this.sweep = false;
 				this.inPlay = true;
-				this.os.flash( this.curBtn, 'inPlay', 3, true, false );
+				this.os.blink( this.curBtn, 'inPlay', 3, true, false );
 				this.target = [ this.curBtn - 4, this.curBtn + 4 ];
 			} else {
 				this.steps++;
@@ -2394,7 +2403,7 @@ class Fire_Away {
 		} else if ( this.hits == 13 ) {
 			
 		} else {
-			this.os.flash( this.hits - 1, 'score', 3, true, false );
+			this.os.blink( this.hits - 1, 'score', 3, true, false );
 		}
 	}
 
@@ -2533,7 +2542,7 @@ class Hide_N_Seek {
 			}
 
 			var scoreLights = numberLights.concat( matchLights );
-			this.os.flash( scoreLights, 'score', 3 );
+			this.os.blink( scoreLights, 'score', 3 );
 		}
 	}
 
