@@ -37,7 +37,7 @@ define([
 	'hw/light',
 	'hw/osc',
 	'fw/os',
-	'ui/Manpage'
+	'ui/manpage'
 ], function( Blinker, Clock, Light, Osc, OpSys, Manpage) {
 	return class Tandy12 {
 		constructor() {
