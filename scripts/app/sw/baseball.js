@@ -49,13 +49,10 @@ define(['ui/scoreboard'], function(Scoreboard) {
 				this.os.selectPgm( this.id );
 				break;
 			case 'start':
-				this.pitchBall = true;
-				this.hit = false;
-				this.run = false;
-				this.scoreboard.windup();
+				this.windup();
 				break;
 			case 'playhit':
-				this.hitBall();
+				this.swing();
 				break;
 			}
 		}
@@ -76,7 +73,14 @@ define(['ui/scoreboard'], function(Scoreboard) {
 			}
 		}
 
-		hitBall() {
+		windup() {
+			this.pitchBall = true;
+			this.hit = false;
+			this.run = false;
+			this.scoreboard.windup();
+		}
+
+		swing() {
 			this.pitchBall = false;
 			this.hit = true;
 		}
