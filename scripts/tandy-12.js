@@ -43,6 +43,21 @@ const PROGS = [
 	'Hide_N_Seek'
 ];
 
+const HUES = [
+	'Indigo',
+	'Orange',
+	'Magenta',
+	'SpringGreen',
+	'Blue',
+	'Cyan',
+	'Yellow',
+	'Salmon',
+	'Lime',
+	'Red',
+	'Violet',
+	'Brown'
+];
+
 // Various constants for configuring user interface.
 const NUM_BTNS = 12;
 const NUM_ROWS = 4;
@@ -127,10 +142,22 @@ class Tandy12 {
 		this.os = null;
 		this.doc = new Manpage();
 
-		this.lights = new Array(NUM_BTNS);
-		for ( var light = 0; light < NUM_BTNS; light++ ) {
-			this.lights[ light ] = new Light( this, light );
-			this.lights[ light ].lit( false );
+		this.lights = new Array( NUM_BTNS );
+		for ( var btn = 0; btn < NUM_BTNS; btn++ ) {
+			this.lights[ btn ] = new Light( this, btn );
+			this.lights[ btn ].lit( false );
+
+			var btnMain = document.getElementById( 'btnMain' + btn );
+
+			// Workaround for dynamically-created elements with mouse events provided by Stack Overflow user 'posit labs':
+			// https://stackoverflow.com/questions/28573631/dynamically-creating-elements-and-adding-onclick-event-not-working
+			(function() {
+				var _btn = btn;
+				btnMain.onmousedown = function() { hw.button( _btn, true )};
+				btnMain.onmouseup = function() { hw.button( _btn, false )};
+				btnMain.ontouchstart = function( event ) { hw.touch( event, _btn, true )};
+				btnMain.ontouchend = function( event ) { hw.touch( event, _btn, false )};
+			})();
 		}
 
 		this.flasher = new Flasher( this );
@@ -148,12 +175,14 @@ class Tandy12 {
 		if ( this.power ) {
 			this.getInput = true;
 			this.os = new OpSys( this, this.doc );
+			DEBUG.genTable();
 		} else {
 			this.osc.play( false );
 			this.clock.stop();
 			this.os = null;
 			this.darken();
 			this.doc.setManpage('main');
+			DEBUG.clear();
 		}
 	}
 
@@ -169,6 +198,15 @@ class Tandy12 {
 				this.os.button( btn, state );
 			}
 		}
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Tandy12::touch
+	DESCRIPTION:		Handle touchscreen events for main buttons.
+	----------------------------------------------------------------------------- */
+	touch( event, btn, state ) {
+		event.preventDefault();
+		this.button( btn, state );
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -226,9 +264,11 @@ class Tandy12 {
 	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ){
 		if ( this.power && this.os != null ) {
+			this.osc.wake();
 			this.flasher.clockTick();
 			this.os.clockTick( timeStamp );
 		}
+		DEBUG.print();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -317,7 +357,7 @@ class Light {
 	constructor( hw, num ) {
 		this.hw = hw;
 		this.num = num;
-		this.id = 'mainBtn'+this.num
+		this.id = 'btnMain'+this.num
 		this.light = document.getElementById(this.id);
 	}
 
@@ -327,8 +367,7 @@ class Light {
 	RETURNS:		Color of associated light number
 	----------------------------------------------------------------------------- */
 	hue( num ) {
-		var hues = ["Indigo","Orange","Magenta","SpringGreen","Blue","Cyan","Yellow","Salmon","Lime","Red","Violet","Brown"];
-		return hues[ num ];
+		return HUES[ num ];
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -358,10 +397,33 @@ class Light {
 CLASS:			Osc
 DESCRIPTION:		Simulates Tandy-12 tone generator.
 ----------------------------------------------------------------------------- */
+
 class Osc {
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		constructor
+	DESCRIPTION:		Initialize web audio oscillator.
+	ATTRIBUTION:		https://gist.github.com/laziel/7aefabe99ee57b16081c
+	----------------------------------------------------------------------------- */
 	constructor() {
-		this.context = new (window.AudioContext || window.webkitAudioContext)();
-		this.iOS = !!navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform);
+		this.context = null;
+		this.usingWebAudio = true;
+		this.listener = false;
+		this.playing = false;
+
+		try {
+			if ( typeof AudioContext !== 'undefined' ) {
+				this.context = new AudioContext();
+			} else if ( typeof webkitAudioContext !== 'undefined' ) {
+				this.context = new webkitAudioContext();
+			} else {
+				this.usingWebAudio = false;
+			}
+		} catch( e ) {
+			alert( "*** BUG - Osc::constructor()\n" + "Error - " + e );
+			this.usingWebAudio = false;
+		}
+
+		this.wake();
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -380,16 +442,45 @@ class Osc {
 	RETURNS:		Frequency of associated button number
 	----------------------------------------------------------------------------- */
 	play( tone, state ) {
-		if ( this.iOS ) { return }	// Don't run sounds on iOS.
-		if (!(typeof this.osc === 'undefined' || this.osc === null)) {
-			this.osc.stop();
+		if ( this.usingWebAudio ) {
+			try {
+				if (!( typeof this.osc === 'undefined' || this.osc === null ) && this.playing == true ) {
+					this.osc.stop();
+					this.playing = false;
+				}
+				if ( state ) {
+					this.osc = this.context.createOscillator();
+					this.osc.type = 'square';
+					this.osc.frequency.value = this.freq( tone );
+					this.osc.connect( this.context.destination );
+					this.osc.start();
+					this.playing = true;
+				}
+			} catch( e ) {
+				alert( "*** BUG - Osc::play( " + tone + ", " + state + " )\n" + "Error - " + e );
+				this.usingWebAudio = false;
+			}
 		}
-		if ( state ) {
-			this.osc = this.context.createOscillator();
-			this.osc.type = 'square';
-			this.osc.frequency.value = this.freq( tone );
-			this.osc.connect(this.context.destination);
-			this.osc.start();
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Osc::wake
+	DESCRIPTION:		Resumes web audio in the event that it gets suspended.
+	ATTRIBUTION:		https://gist.github.com/laziel/7aefabe99ee57b16081c
+	----------------------------------------------------------------------------- */
+	wake() {
+		if ( this.usingWebAudio && this.context.state === 'suspended' ) {
+			var resume = function() {
+				hw.osc.context.resume();
+
+				setTimeout( function() {
+					if ( hw.osc.context.state === 'running' ) {
+						document.body.removeEventListener( 'touchend', resume, false );
+					}
+				}, 0 );
+			};
+
+			document.body.addEventListener('touchend', resume, false);
 		}
 	}
 };
@@ -438,22 +529,43 @@ class Clock {
 		this.default();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::ratioToHz
+	DESCRIPTION:		Convert ratio to pulses-per-second based on allowable
+				min/max clock Hz.
+	----------------------------------------------------------------------------- */
 	ratioToHz( ratio ) {
 		return ( this.clockHzMax  * ratio );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::msToHz
+	DESCRIPTION:		Convert clock pulse delay in ms to frequency in Hz.
+	----------------------------------------------------------------------------- */
 	msToHz( ms ) {
 		return 1000 / ms;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::hzToMs
+	DESCRIPTION:		Convert clock frequency in Hz to pulse delay in ms.
+	----------------------------------------------------------------------------- */
 	hzToMs( hz ) {
 		return Math.round( 1000 / hz );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::msToRatio
+	DESCRIPTION:		Convert clock pulse delay in ms to decimal ratio.
+	----------------------------------------------------------------------------- */
 	msToRatio( ms ) {
 		return ( ms / this.clockMsMax ) * 10000;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::hzToRatio
+	DESCRIPTION:		Convert clock frequency in Hz to decimal ratio.
+	----------------------------------------------------------------------------- */
 	hzToRatio( hz ) {
 		return ( hz / this.clockHzMax ) * 10000;
 	}
@@ -478,6 +590,10 @@ class Clock {
 		this.hw.clockTick( this.timeStamp++ );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::start
+	DESCRIPTION:		Initialize and seqStart clock.
+	----------------------------------------------------------------------------- */
 	start() {
 		if ( this.hw.power && this.timer == null ) {
 			this.timeStamp = 0;
@@ -487,7 +603,7 @@ class Clock {
 
 	/* -----------------------------------------------------------------------------
 	FUNCTION:		Clock::stop
-	DESCRIPTION:		Stop clock.
+	DESCRIPTION:		Pause clock.
 	----------------------------------------------------------------------------- */
 	stop() {
 		if ( typeof this.timer !== 'undefined' ) {
@@ -496,6 +612,11 @@ class Clock {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::advance
+	DESCRIPTION:		Manually-tick clock, stopping automatic timer if
+				necessary.
+	----------------------------------------------------------------------------- */
 	advance() {
 		if ( this.hw.power ) {
 			this.stop();
@@ -503,6 +624,10 @@ class Clock {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::run
+	DESCRIPTION:		Resume the clock.
+	----------------------------------------------------------------------------- */
 	run() {
 		this.tick();
 		var tmpThis = this;
@@ -511,6 +636,11 @@ class Clock {
 		}, this.clockRate );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::set
+	DESCRIPTION:		Set clock rate to new value based on clock control
+				settings.
+	----------------------------------------------------------------------------- */
 	set() {
 		var ms = this.clockMs.value;
 		if ( ms >= this.clockMsMin && ms <= this.clockMsMax ) {
@@ -543,6 +673,10 @@ class Clock {
 		this.clockRate = newMs;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Clock::default
+	DESCRIPTION:		Reset clock rate to default value.
+	----------------------------------------------------------------------------- */
 	default() {
 		var ms = this.hzToMs( CONFIG.getClockHzDef());
 		var ratio = this.msToRatio( ms )
@@ -560,6 +694,7 @@ class Flasher {
 	constructor( hw ) {
 		this.hw = hw;
 		this.reset();
+		this.btn = null;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -568,22 +703,20 @@ class Flasher {
 				accordingly.
 	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( this.run ) {
+		if ( this.flashing ) {
 			if ( this.state ) {
 				if ( this.cycles )
 					++this.count;
 				this.on();
-				this.state = !this.state;
 			} else {
 				this.off();
 				if ( this.cycles && this.count >= this.cycles ) {
 					this.stop();
 					this.hw.seqEnd( this.label );
-				} else {
-					this.state = !this.state;
 				}
 			}
 		}
+		this.state = !this.state;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -591,7 +724,8 @@ class Flasher {
 	DESCRIPTION:		Set flasher mode, cycle count, and label, then start
 				cycling.
 	----------------------------------------------------------------------------- */
-	start( btn, label, cycles = 0, light, tone ) {
+	start( btn, label, cycles, light, tone ) {
+		this.reset();
 		this.light = light;
 		this.tone = tone ;
 		this.btn = btn;
@@ -599,13 +733,15 @@ class Flasher {
 		this.label = label;
 		this.cycles = cycles;
 
-		if ( !( this.light || this.tone )) {
-			this.light = true;
-			this.tone = true;
-		}
-
 		this.count = 0;
-		this.run = true;
+		this.run();
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Begin cycling flasher.
+	----------------------------------------------------------------------------- */
+	run() {
+		this.flashing = true;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -613,8 +749,8 @@ class Flasher {
 	DESCRIPTION:		Stop flasher and reinitialize settings.
 	----------------------------------------------------------------------------- */
 	stop() {
-		this.reset();
 		this.off();
+		this.flashing = false;
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -622,8 +758,6 @@ class Flasher {
 	DESCRIPTION:		Initialize settings
 	----------------------------------------------------------------------------- */
 	reset() {
-		this.run = false;
-		this.state = false;
 		this.light = false;
 		this.tone = false;
 	}
@@ -633,10 +767,12 @@ class Flasher {
 	DESCRIPTION:		Turn on specified lights and tone.
 	----------------------------------------------------------------------------- */
 	on() {
-		if ( this.light )
+		if ( this.light ) {
 			this.hw.light( this.btn, true );
-		if ( this.tone )
+		}
+		if ( this.tone ) {
 			this.hw.tone( this.btn, true );
+		}
 	}
 
 	/* -----------------------------------------------------------------------------
@@ -700,6 +836,10 @@ class Sequencer{
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::add
+	DESCRIPTION:		Appends single note to sequence.
+	----------------------------------------------------------------------------- */
 	add( note ) {
 		this.seq.push( note );
 		this.len = this.seq.length;
@@ -711,6 +851,10 @@ class Sequencer{
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::clear
+	DESCRIPTION:		Clears the sequence.
+	----------------------------------------------------------------------------- */
 	clear() {
 		this.seq.length = 0;
 	}
@@ -727,6 +871,10 @@ class Sequencer{
 		this.run = true;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Sequencer::stop
+	DESCRIPTION:		Stops a running sequence.
+	----------------------------------------------------------------------------- */
 	stop() {
 		this.run = false;
 		var tmpThis = this;
@@ -736,6 +884,11 @@ class Sequencer{
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			OpSys
+DESCRIPTION:		Interface between hardware emulator and program logic
+			execution.
+----------------------------------------------------------------------------- */
 class OpSys {
 	constructor( hw, doc ) {
 		this.hw = hw;
@@ -744,83 +897,172 @@ class OpSys {
 		this.hw.clock.start();
 		this.seq = new Sequencer( this );
 		this.sysMem = new ( eval( this.getBootProg()))( this );
+		this.debug();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clockTick
+	DESCRIPTION:		Logic triggered by hardware clock emulator.  Passes
+				clock pulses on to program held in sysMem.
+	----------------------------------------------------------------------------- */
 	clockTick( timeStamp ) {
 		this.timeStamp = timeStamp;
+
 		if ( !this.seq.clockTick()) {
 			if ( typeof this.sysMem.clockTick === "function" ) {
 				this.sysMem.clockTick( this.timeStamp );
 			}
 		}
+
+		this.debug();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clockReset
+	DESCRIPTION:		Resets clock pulses to ensure full pulse when clock is
+				restarted.
+	----------------------------------------------------------------------------- */
 	clkReset() {
 		this.hw.clock.reset();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::debug
+	DESCRIPTION:		Update information in debug pane.
+	----------------------------------------------------------------------------- */
+	debug() {
+		DEBUG.clear();
+		DEBUG.update( this.constructor.name, this );
+		DEBUG.update( this.sysMem.constructor.name, this.sysMem );
+		DEBUG.update( this.seq.constructor.name, this.seq );
+		DEBUG.genTable();
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::getBootProg
+	DESCRIPTION:		Initialize bootup program selected by dropdown menu in
+				debugging pane.
+	RETURNS			Identifier of program to boot into.
+	----------------------------------------------------------------------------- */
 	getBootProg() {
 		var bootProg = document.getElementById('STARTUP_PROG');
 		var progName = bootProg.options[bootProg.selectedIndex].value;
 		return progName;
 	}
 
-	selectPgm( id ) {
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::selectPgm
+	DESCRIPTION:		Load 'Picker' into sysMem.
+	----------------------------------------------------------------------------- */
+	selectPgm( id = 0 ) {
 		this.clear();
 		this.sysMem = null;
 		this.sysMem = new Picker( this, id );
+		this.debug();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::randRange
+	DESCRIPTION:		Randomly selects a number between min and max,
+				inclusive.
+	RETURNS:		Random integer.
+	----------------------------------------------------------------------------- */
 	randRange( min, max ) {
 		min = Math.ceil(min);
 		max = Math.floor(max);
 		return Math.floor(Math.random() * ( max - min + 1 )) + min;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::randBtn
+	DESCRIPTION:		Selects a random button.
+	RETURNS:		ID of random button.
+	----------------------------------------------------------------------------- */
 	randBtn() {
 		var btn = this.randRange( 0, NUM_BTNS - 1 );
 		return btn;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::button
+	DESCRIPTION:		Triggered by pressing/releasing a main button as
+				registered by Tandy12 class.
+	----------------------------------------------------------------------------- */
 	button( btn, state ) {
 		if ( typeof this.sysMem.button == "function" ) {
 			this.sysMem.button( btn, state );
 		}
+		this.debug();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnCol
+	DESCRIPTION:		Determines the column where button in question is
+				located.
+	RETURNS:		Integer identifying button col.
+	----------------------------------------------------------------------------- */
 	btnCol( btn ) {
 		var col = Math.floor(( btn / NUM_BTNS ) * NUM_COLS );
 		return col;
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnRow
+	DESCRIPTION:		Determines the row where button in question is located.
+	RETURNS:		Integer identifying button row.
+	----------------------------------------------------------------------------- */
 	btnRow( btn ) {
 		var row = btn - ( this.btnCol( btn ) * NUM_ROWS );
 		return row
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqLoad
+	DESCRIPTION:		Loads a sequence into memory, then begins playback.
+	----------------------------------------------------------------------------- */
 	seqLoad( tones, label, light = true, tone = true ) {
 		this.seq.load( tones );
 		this.seq.start( label, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqClear
+	DESCRIPTION:		Clear sequence from memory.
+	----------------------------------------------------------------------------- */
 	seqClear() {
 		this.seq.clear();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqAdd
+	DESCRIPTION:		Appends a single note to sequencer.
+	----------------------------------------------------------------------------- */
 	seqAdd( btn ) {
 		this.seq.add( btn )
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqStart
+	DESCRIPTION:		Begin playback of sequence in memory.
+	----------------------------------------------------------------------------- */
 	seqStart( label, light = true, tone = true ) {
 		this.seq.start( label, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::seqEnd
+	DESCRIPTION:		Triggered upon sequence completion.
+	----------------------------------------------------------------------------- */
 	seqEnd( label ) {
 		if ( typeof this.sysMem.seqEnd === "function" ) {
 			this.sysMem.seqEnd( label );
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::playBip
+	DESCRIPTION:		Plays a short 'bip' with light, sound, or both.
+	----------------------------------------------------------------------------- */
 	playBip( btn = 7, label, light = false, tone = true ) {
 		var tmpThis = this;
 		setTimeout( function() {
@@ -836,6 +1078,10 @@ class OpSys {
 		}, 125);
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::blast
+	DESCRIPTION:		Turns on/off a button's associated light/tone.
+	----------------------------------------------------------------------------- */
 	blast( btn, state = true, light = true, tone = true ) {
 		if ( light )
 			this.hw.light( btn, state );
@@ -843,11 +1089,18 @@ class OpSys {
 			this.hw.tone( btn, state );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::flash
+	DESCRIPTION:		Flashes a button's light/tone.
+	----------------------------------------------------------------------------- */
 	flash( btn, label, cycles = 0, light = true, tone = true ) {
-		this.hw.flasher.reset();
 		this.hw.flasher.start( btn, label, cycles, light, tone );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::clear
+	DESCRIPTION:		Turns off all lights/tones.
+	----------------------------------------------------------------------------- */
 	clear() {
 		this.hw.flasher.stop();
 		for ( var num = 0; num < NUM_BTNS; num++ ) {
@@ -856,17 +1109,27 @@ class OpSys {
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		OpSys::btnClick
+	DESCRIPTION:		Processes presses of auxiliary buttons (start, select,
+				repeat, play, and space).
+	----------------------------------------------------------------------------- */
 	btnClick( btnName ) {
 		if ( typeof this.sysMem.btnClick == "function") {
 			this.sysMem.btnClick( btnName );
 		}
+		this.debug();
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Boot
+DESCRIPTION:		Main startup program.  Plays an ascending sequence of
+			lights/tones, and loads picker.
+----------------------------------------------------------------------------- */
 class Boot {
 	constructor( os ) {
 		this.os = os;
-		this.progNum = 0;
 		this.os.clkReset();
 		for ( var btn = 0; btn < 12; btn++ ) {
 			this.os.seqAdd( btn );
@@ -874,11 +1137,20 @@ class Boot {
 		this.os.seqStart();
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Boot::seqEnd
+	DESCRIPTION:		Upon completion of startup 'animation', loads Picker
+				into memory.
+	----------------------------------------------------------------------------- */
 	seqEnd() {
-		this.os.selectPgm( this.progNum );
+		this.os.selectPgm();
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Picker
+DESCRIPTION:		Logic for game selection interface
+----------------------------------------------------------------------------- */
 class Picker {
 	constructor( os, id = 0 ) {
 		this.os = os;
@@ -886,7 +1158,7 @@ class Picker {
 		this.btnNum = id;
 		this.select = false;
 		this.doPick = true;
-		this.pages = [
+		this.manpages = [
 			'organ',
 			'song-writer',
 			'repeat',
@@ -900,56 +1172,77 @@ class Picker {
 			'fire-away',
 			'hide-n-seek'
 		]
-		this.os.doc.setManpage('picker');
+		this.os.flash( this.btnNum, '', 0, true, false );
+		this.os.doc.setManpage( 'picker' );
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::clockTick
+	DESCRIPTION:		Logic triggered by OpSys clock.  Passes clock pulses on
+				to program held in sysMem.
+	----------------------------------------------------------------------------- */
 	clockTick() {
-		if ( !this.select ) {
-			this.os.flash( this.btnNum, '', 0, true, false );
+		if ( !this.select && !hw.flasher.state ) {
 			this.select = true;
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::button
+	DESCRIPTION:		Processes presses of main game buttons.
+	----------------------------------------------------------------------------- */
 	button( btn, state ) {
 		if ( this.doPick && state ) {
 			this.btnNum = btn;
+			this.os.flash( this.btnNum, '', 0, true, false );
 			this.select = false;
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::btnClick
+	DESCRIPTION:		Processes presses of auxiliary buttons (start, select,
+				repeat, play, and space).
+	----------------------------------------------------------------------------- */
 	btnClick( btnName ) {
 		switch ( btnName ) {
 		case 'start':
 			this.doPick = false;
 			this.os.clear();
 			this.os.playBip( this.btnNum, 'loadPgm', true );
-			this.os.doc.setManpage( this.pages[ this.btnNum ]);
+			this.os.doc.setManpage( this.manpages[ this.btnNum ]);
 			break;
 		case 'select':
 			if ( this.select ){
-				this.select = false;
 				if ( ++this.btnNum >= NUM_BTNS ) {
 					this.btnNum = 0;
 				}
+				this.os.flash( this.btnNum, '', 0, true, false );
+				this.select = false;
 			}
 			break;
 		}
 	}
 
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Picker::endBip
+	DESCRIPTION:		Triggered by the end of a 'bip'; used trigger program
+				loading into os.sysMem.
+	----------------------------------------------------------------------------- */
 	endBip( label ) {
 		switch( label ) {
 		case 'loadPgm':
 			this.os.sysMem = null;
-			this.os.sysMem = new (eval( PROGS[ this.btnNum ]))( this.os, this.btnNum );
+			this.os.sysMem = new ( eval( PROGS[ this.btnNum ]))( this.os, this.btnNum );
 			break;
 		}
 	}
 };
 
-/*
-Organ
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Organ
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Organ {
 	constructor( os, id ) {
 		this.os = os;
@@ -970,10 +1263,10 @@ class Organ {
 	}
 };
 
-/*
-Song Writer
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Song_Writer
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Song_Writer {
 	constructor( os, id ) {
 		this.os = os;
@@ -1030,10 +1323,10 @@ class Song_Writer {
 	}
 };
 
-/*
-Repeat
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Repeat
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Repeat {
 	constructor( os, id ) {
 		this.os = os;
@@ -1127,10 +1420,10 @@ class Repeat {
 	}
 };
 
-/*
-Torpedo
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Torpedo
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Torpedo {
 	constructor( os, id ) {
 		this.os = os;
@@ -1196,10 +1489,10 @@ class Torpedo {
 	}
 };
 
-/*
-Tag-It
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Tag-It
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Tag_It {
 	constructor( os, id ) {
 		this.os = os;
@@ -1297,10 +1590,10 @@ class Tag_It {
 	}
 };
 
-/*
-Roulette
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Roulette
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Roulette {
 	constructor( os, id ) {
 		this.os = os;
@@ -1359,10 +1652,11 @@ class Roulette {
 
 };
 
-/*
-Baseball
-*/
 
+/* -----------------------------------------------------------------------------
+CLASS:			Baseball
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Baseball {
 	constructor( os, id ) {
 		this.os = os;
@@ -1383,7 +1677,7 @@ class Baseball {
 			this.pitchBall = true;
 			this.hit = false;
 			this.run = false;
-			this.scoreboard.pitch();
+			this.scoreboard.windup();
 			break;
 		case 'playhit':
 			this.hitBall();
@@ -1397,7 +1691,8 @@ class Baseball {
 			this.os.flasher = true;
 			this.btnNum = this.os.randBtn();
 			this.os.clear();
-			this.os.blast( this.btnNum, true );
+			this.os.blast( this.btnNum, true, true, false );
+			this.scoreboard.pitch( this.btnNum );
 		} else if ( this.hit ) {
 			this.hit = false;
 			this.os.flash( this.btnNum, 'hit', 3 );
@@ -1422,6 +1717,10 @@ class Baseball {
 	}
 };
 
+/* -----------------------------------------------------------------------------
+CLASS:			Scoreboard
+DESCRIPTION:		Monitors and displays progress for Baseball.
+----------------------------------------------------------------------------- */
 class Scoreboard{
 	constructor( game ) {
 		this.game = game;
@@ -1439,35 +1738,96 @@ class Scoreboard{
 			'Double',
 			'Out'
 		];
+		this.manpage = document.getElementById('manpage');
+		this.scoreboard = this.manpage.contentDocument? this.manpage.contentDocument: this.manpage.contentWindow.document;
 		this.outs = null;
+
+		var hitHtml = '';
+
+		for ( var row = 0; row < NUM_ROWS; row++ ) {
+			hitHtml += '<tr>';
+			for ( var col = 0; col < NUM_COLS; col++ ) {
+				var h = col * NUM_ROWS + row;
+				hitHtml += '<td>';
+				hitHtml += "<div class='hittype' id='outcome" + h + "'>";
+				hitHtml += "<div class='hitcaption'>";
+				hitHtml += "<span class='hittext'>" + this.outcome[ h ] + '</span>';
+				hitHtml += '</div>';
+				hitHtml += '</div></td>';
+			}
+			hitHtml += '</tr>';
+		}
+
+		this.scoreboard.getElementById( 'hitType' ).innerHTML = hitHtml;
+
+		for ( var b = 0; b < 4; b++ ) {
+			var plateId = 'plate' + b
+			var plate = this.scoreboard.getElementById( plateId );
+			if ( plate.getContext ) {
+				var context = plate.getContext('2d');
+				context.beginPath();
+				context.moveTo( 0, 30 );
+				context.lineTo( 30, 60 );
+				context.lineTo( 60, 30 );
+				if ( b == 0 ) {
+					context.lineTo( 60, 0 );
+					context.lineTo( 0, 0 );
+				} else {
+					context.lineTo( 30, 0 );
+				}
+				context.closePath();
+				context.stroke();
+			}
+		}
+
 		this.start()
 	}
 
 	start() {
+		this.gameOver = false;
 		this.inning = 1;
 		this.outs = 0;
 		this.half = false;
-		this.score = [ 0, 0 ];
+		this.score = [[ 'Away' ], [ 'Home' ]];
+		this.rhe = [];
+		for ( var i = 0; i <= 1; i++ ) {
+			this.rhe[ i ] = [];
+			this.rhe[ i ][ 'r' ] = 0;
+			this.rhe[ i ][ 'h' ] = 0;
+			this.rhe[ i ][ 'e' ] = 0;
+		}
 		this.bases = [ false, false, false, false ];
 	}
 	
-	pitch() {
+	windup() {
+		if ( this.gameOver ) {
+			this.start()
+		}
 		this.bases[0] = true;
 	}
 
+	pitch( btn ) {
+		for ( var b = 0; b < NUM_BTNS; b++ ) {
+			var cell = this.scoreboard.getElementById( 'outcome' + b )
+			cell.style.backgroundColor = '';
+		}
+		
+		var cell = this.scoreboard.getElementById( 'outcome' + btn );
+		cell.style.backgroundColor = HUES[ btn ];
+	}
+
 	hit( btn ) {
+		this.advance = 0;
 		switch (this.outcome[ btn ]) {
-		case 'Single':		// Single
-			this.advance = 1;
-			break;
-		case 'Double':		// Double
-			this.advance = 2;
-			break;
-		case 'Triple':		// Triple
-			this.advance = 3;
-			break;
-		case 'Home Run':	// Home Run
-			this.advance = 4;
+		case 'Home Run':	// Single
+			this.advance += 1;
+		case 'Triple':		// Double
+			this.advance += 1;
+		case 'Double':		// Triple
+			this.advance += 1;
+		case 'Single':		// Home Run
+			this.advance += 1;
+			this.rhe[ this.half ? 1 : 0 ][ 'h' ] != null ? this.rhe[ this.half ? 1 : 0 ][ 'h' ]++ : this.rhe[ this.half ? 1 : 0 ][ 'h' ] = 1;
 			break;
 		case 'Out':		// Out
 			this.outs++
@@ -1478,7 +1838,13 @@ class Scoreboard{
 	run() {
 		if ( this.advance-- > 0 ) {
 			if ( this.bases.pop()) {
-				this.score[ this.half ? 1 : 0 ]++
+				var half = this.half ? 1 : 0;
+				this.rhe[ half ][ 'r' ]++;
+				if ( isNaN( this.score[ half ][ this.inning ])) {
+					this.score[ half ][ this.inning ] = 1;
+				} else {
+					this.score[ half ][ this.inning ]++;
+				}
 			}
 			this.bases.unshift( false );
 			return true;
@@ -1490,39 +1856,81 @@ class Scoreboard{
 
 	endPlay() {
 		if ( this.outs == 3 ) {
-			this.bases = [ false, false, false, false ];
-			this.outs = 0;
-			this.half = !this.half;
-			if ( !this.half ) {
-				this.inning++;
-			}
+			this.retire();
 		}
-		this.update()
+		this.update();
+	}
+
+	retire() {
+		this.bases = [ false, false, false, false ];
+		this.outs = 0;
+		this.half = !this.half;
+		if ( !this.half ) {
+			this.endInning();
+		}
+	}
+
+	endInning() {
+		if ( this.inning >= 9 && ( this.rhe[ 0 ][ 'r' ] != this.rhe[ 1 ][ 'r' ])) {
+			this.gameOver = true;
+		} else {
+			this.inning++;
+		}
 	}
 
 	update() {
 		const AWAY_TEAM = 0;
 		const HOME_TEAM = 1;
-		var manpage = document.getElementById('manpage');
-		var scoreboard = manpage.contentDocument? manpage.contentDocument: manpage.contentWindow.document;
+
+		var lineScore = function( game ) {
+			var scorebox = '<table width=100%>';
+			scorebox += '<tr>';
+			for ( var inning = 0; inning <= ( game.inning <= 9 ? 9 : game.inning ); inning++ ) {
+				scorebox += '<td>' + ( inning == 0 ? 'Team' : inning ) + '</td>'
+			}
+			scorebox += '<td>&nbsp;</td><td>R</td><td>H</td><td>E</td>'
+			scorebox += '</tr>';
+			for ( var half = 0; half <= 1; half++ ) {
+				scorebox += '<tr id=team' + half + '>';
+				for ( var inning = 0; inning <= ( game.inning <= 9 ? 9 : game.inning ); inning++ ) {
+					scorebox += '<td>' + ( game.score[ half ][ inning ] != null ? game.score[ half ][ inning ] : 0 ) + '</td>'
+				}
+				scorebox += '<td>&nbsp;</td><td>' + game.rhe[ half ][ 'r' ] + '</td><td>' + game.rhe[ half ][ 'h' ] + '</td><td>' + game.rhe[ half ][ 'e' ] + '</td>'
+				scorebox += '</tr>';
+			}
+			scorebox += '</table>';
+			return scorebox;
+		};
+
 		var halfTxt;
 		if ( this.half ) {
 			halfTxt = "Bottom";
 		} else {
 			halfTxt = "Top";
 		}
-		scoreboard.getElementById( 'half' ).innerHTML=halfTxt;
-		scoreboard.getElementById( 'inning' ).innerHTML=this.inning;
+
 		for ( var base = 0; base < 4; base++ ) {
 			if ( this.bases[base] ) {
-				scoreboard.getElementById( 'base'+base ).innerHTML='*';
+				this.scoreboard.getElementById( 'base'+base ).innerHTML='&#x26be;';
 			} else {
-				scoreboard.getElementById( 'base'+base ).innerHTML='&nbsp;';
+				this.scoreboard.getElementById( 'base'+base ).innerHTML=null;
 			}
 		}
-		scoreboard.getElementById( 'outs' ).innerHTML=this.outs;
-		scoreboard.getElementById( 'away' ).innerHTML=this.score[ AWAY_TEAM ];
-		scoreboard.getElementById( 'home' ).innerHTML=this.score[ HOME_TEAM ];
+
+		this.scoreboard.getElementById( 'lineScore' ).innerHTML=lineScore( this );
+		if ( this.gameOver ) {
+			if ( this.rhe[ 0 ][ 'r' ] > this.rhe[ 1 ][ 'r' ]) {
+				this.scoreboard.getElementById( 'team0' ).style = "font-weight: bold;";
+			} else {
+				this.scoreboard.getElementById( 'team1' ).style = "font-weight: bold;";
+			}
+			this.scoreboard.getElementById( 'half' ).innerHTML='Final';
+			this.scoreboard.getElementById( 'outs' ).innerHTML=3;
+		} else {
+			this.scoreboard.getElementById( 'outs' ).innerHTML=this.outs;
+			this.scoreboard.getElementById( 'half' ).innerHTML=halfTxt;
+			this.scoreboard.getElementById( 'inning' ).innerHTML=this.inning;
+		}
 	}
 };
 
@@ -1624,10 +2032,10 @@ class Repeat_Plus {
 	}
 };
 
-/*
-Treasure Hunt
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Treasure_Hunt
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Treasure_Hunt {
 	constructor( os, id ) {
 		this.os = os;
@@ -1722,10 +2130,10 @@ class Treasure_Hunt {
 	}
 };
 
-/*
-Compete
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Compete
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Compete {
 	constructor( os, id ) {
 		this.os = os;
@@ -1855,10 +2263,10 @@ class Compete {
 
 };
 
-/*
-Fire Away
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Fire_Away
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Fire_Away {
 	constructor( os, id ) {
 		this.os = os;
@@ -1999,10 +2407,10 @@ class Fire_Away {
 	}
 };
 
-/*
-Hide'N Seek
-*/
-
+/* -----------------------------------------------------------------------------
+CLASS:			Hide_N_Seek
+DESCRIPTION:		Game logic
+----------------------------------------------------------------------------- */
 class Hide_N_Seek {
 	constructor( os, id ) {
 		this.os = os;
@@ -2029,9 +2437,11 @@ class Hide_N_Seek {
 		// Only process button press if game isn't over
 		if ( this.gameOver || btn < 8 || btn > 11)
 			return;
+		// Are we accepting presses at this time?
 		if ( this.getInput || !state ) {
 			this.os.blast( btn, state );
 		}
+		// Was the button pressed, or released?
 		if ( state ) {
 			this.presses[ this.tries++ ] = btn;
 		} else {
@@ -2164,6 +2574,97 @@ class Hide_N_Seek {
 	}
 };
 
+class Debug {
+	constructor() {
+		this.registers = {};
+		this.doDebug = false;
+	}
+
+	clear() {
+		delete this.registers;
+		this.registers = {};
+		document.getElementById('registers').innerHTML = '';
+	}
+
+	/* -----------------------------------------------------------------------------
+	FUNCTION:		Debug::bug
+	CALL:			DEBUG.bug( error, this, this.function.name, arguments );
+	DESCRIPTION:		Print exception report in alert box
+	RETURNS:		Nothing (Void Function)
+	----------------------------------------------------------------------------- */
+
+	bug( err, obj, func, args ) {
+		var alertTxt = '*** BUG - ';
+		alertTxt += obj.constructor.name + '::' + func + '( ';
+
+		var first = true;
+		for ( var arg of args ) {
+			if ( first ) {
+				first = false;
+			} else {
+				alertTxt += ', ';
+			}
+			alertTxt += arg
+		}
+
+		alertTxt += ' )\n';
+
+		alertTxt += 'Error - ' + err;
+
+		alert( alertTxt );
+	}
+
+	genTable() {
+		if ( this.doDebug ) {
+			var dbgHtml = 'Registers:<br />';
+			dbgHtml += '<table width=100%>';
+			for ( var label in this.registers ) {
+				dbgHtml += '<tr><th colspan=2 align=left>' + label + '</th></tr>';
+				for ( var key in this.registers[ label ]) {
+					dbgHtml += '<tr><td align=right>' + key + ':</td><td width=100% id=' + key + '>' +'</td></tr>'
+				}
+			}
+			dbgHtml += '</table>';
+			document.getElementById('registers').innerHTML = dbgHtml;
+		}
+	}
+
+	update( label, memory ) {
+		this.registers[ label ] = {};
+		for ( var key in memory ) {
+			if ( typeof memory[ key ] !== 'function' && memory[ key ] != '[object Object]' ){
+				this.registers[ label ][ key ] = memory[ key ];
+			}
+		}
+	}
+
+	print() {
+		if ( this.doDebug ) {
+			for ( var label in this.registers ) {
+				for ( var key in this.registers[ label ]) {
+					if ( hw.power ) {
+						document.getElementById( key ).innerHTML = this.registers[ label ][ key ];
+					}
+				}
+			}
+		}
+	}
+
+	toggle() {
+		this.doDebug = !this.doDebug;
+		var dbgBtn = document.getElementById('dbgBtn');
+		if ( this.doDebug ) {
+			dbgBtn.innerHTML = 'Enabled';
+			this.genTable();
+			this.update();
+			this.print();
+		} else {
+			dbgBtn.innerHTML = 'Disabled'
+			this.clear();
+		}
+	}
+};
+
 /* -----------------------------------------------------------------------------
 FUNCTION:		IIFE
 DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
@@ -2185,10 +2686,11 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		"Fire Away",
 		"Hide'N Seek"
 	];
-	var btnNum = 0;
 	var boardHtml = ""
 
-	// Generate Debugging Interface
+	/*
+	 * Generate Boot Selector
+	 */
 	var progs = [
 		'Boot',
 		'Picker'
@@ -2202,21 +2704,35 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 		dbgBootprog.add( opt );
 	}
 
-	// Generate Main Console
-	for ( c = 0; c < NUM_COLS; c++ ) {
-		boardHtml += '<td align=center>';
-		for ( r = 0; r < NUM_ROWS; r++) {
-			btnNum = r + ( c * NUM_ROWS );
-			boardHtml += '<div class="btnMain" id="mainBtn'+btnNum+'" onMouseDown="hw.button('+btnNum+',true)" onMouseUp="hw.button('+btnNum+',false)">' + (btnNum + 1) + "</div>";
-			boardHtml += '<span class="btnText">' + btnTxt[btnNum] + '</span>';
+	/*
+	 * Generate Main Console
+	 */
+	var playfield = document.getElementById("playfield");
+
+	for ( var r = 0; r < NUM_ROWS; r++ ) {
+		var row = playfield.insertRow( r );
+		for ( var c = 0; c < NUM_COLS; c++ ) {
+
+			// Retrieve elements
+			var cell = row.insertCell( c );
+			var btnNum = ( c * NUM_ROWS ) + r;
+			var btnMain = document.createElement('div');
+			var btnCaption = document.createElement('div');
+			var btnCaptionTxt = document.createTextNode( btnTxt [ btnNum ] );
+
+			btnMain.className = 'btnMain';
+			btnMain.id = 'btnMain' + btnNum;
+			btnMain.innerHTML = btnNum + 1;
+
+			btnCaption.className = 'btnCaption';
+			btnCaption.appendChild( btnCaptionTxt );
+
+			cell.appendChild( btnMain );
+			cell.appendChild( btnCaption );
 		}
-		boardHtml += "</td>"
 	}
 
-	document.getElementById("playfield").innerHTML=boardHtml;
-
 	CONFIG = new Config();
+	DEBUG = new Debug();
 	hw = new Tandy12();
-	clock = hw.clock;
 })();
-

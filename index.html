@@ -11,50 +11,61 @@
 	<div class="wrapper">
 		<!-- BEGIN Debugging Interface -->
 		<div class="content left">
-			STARTUP_PROG: <select id="STARTUP_PROG"></select>
-			<table width=100% border=0>
-				<tr>
-					<td />
-					<td align=center>
-						Clock Rate(Hz)
-					</td>
-					<td />
-				</tr>
-				<tr>
-					<td align=right>
-						<span id='clockHzMin'></span>
-					</td>
-					<td>
-						<div class="slidecontainer">
-							<input type="range" class="clockSlide" id="clockSlider" oninput="clock.adjust()"/>
-						</div>
-					</td>
-					<td>
-						<span id='clockHzMax'></span>
-					</td>
-				</tr>
-				<tr>
-					<td>
-						mSec:
-						<input type=number id='clockMs' /><button onclick="clock.set()">Set</button>
-					</td>
-					<td align=center>
-						<span id='clockPcnt'></span> - <span id='clockHz'></span>
-					</td>
-					<td>
-						<button onclick="clock.default()">Reset</button>
-					</td>
-				</tr>
-				<tr>
-					<td />
-					<td align=center>
-						<button onclick="clock.stop()">&#x25A0;</button>
-						<button onclick="clock.advance()">&#x25AE;&#x25B6;</button>
-						<button onclick="clock.start()">&#x25B6;</button>
-					</td>
-					<td />
-				</tr>
-			</table>
+			<div id=bootProg>
+				STARTUP_PROG: <select id="STARTUP_PROG"></select>
+			</div>
+			<div id=clockPanel>
+				<table width=100%>
+					<tr>
+						<td />
+						<td align=center>
+							Clock Rate(Hz)
+						</td>
+						<td />
+					</tr>
+					<tr>
+						<td align=right>
+							<span id='clockHzMin'></span>
+						</td>
+						<td>
+							<div class="slidecontainer">
+								<input type="range" class="clockSlide" id="clockSlider" oninput="hw.clock.adjust()"/>
+							</div>
+						</td>
+						<td>
+							<span id='clockHzMax'></span>
+						</td>
+					</tr>
+					<tr>
+						<td />
+						<td align=center>
+							<span id='clockPcnt'></span> - <span id='clockHz'></span>
+						</td>
+						<td>
+							<button onclick="hw.clock.default()">Reset</button>
+						</td>
+					</tr>
+					<tr>
+						<td align=center colspan=3>
+							<table width=100%>
+								<tr>
+									<td width=50% align=center>
+										<button onclick="hw.clock.stop()">&#x25A0;</button>
+										<button onclick="hw.clock.advance()">&#x25AE;&#x25B6;</button>
+										<button onclick="hw.clock.start()">&#x25B6;</button>
+									</td>
+									<td width=50% align=center>
+										mSec:
+										<input type=number id='clockMs' /><button onclick="hw.clock.set()">Set</button>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+			Debug Mode Toggle: <button id=dbgBtn onClick=DEBUG.toggle()>Disabled</button>
+			<div id='registers'></div>
 		</div>
 		<!-- END Debugging Interface -->
 
@@ -126,7 +137,7 @@
 
 		<!-- BEGIN Dynamic Documentation -->
 		<div class="content right">
-			<div style='position: relative; width: 100%; height: 0px; padding-bottom: 60%;'>
+			<div style='position: relative; width: 100%; height: 0px; padding-bottom: 125%;'>
 				<iframe id='manpage' src='about:blank' style='position: absolute; height: 100%; width: 100%; border: none;'></iframe>
 			</div>
 		</div>
@@ -134,20 +145,17 @@
 	</div>
 
 	<!-- BEGIN Copyright Footer -->
-	<table width=100% style="position: fixed; bottom: 0">
-		<tr>
-			<td width=50%>
-				Brought to you by:<br />
-				<a href="http://www.nyfnet.net">NYFnet Enterprises</a><br />
-				<button onclick="gplAlert()">About</button>
-			</td>
-			<td width=50% align=right>
-				<a href="about/licenses.html" rel="jslicense">JavaScript license information</a><br />
-				&#169;2017 <a href="mailto:anizaeger@nyfnet.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
-				<a href=#top>Back to Top</a>
-			</td>
-		</tr>
-	</table>
+	<div class="left footer">
+		Brought to you by:<br />
+		<a href="http://www.nyfnet.net">NYFnet Enterprises</a><br />
+		<button onclick="gplAlert()">About</button>
+	</div>
+	<div class="right footer">
+		<a href="about/licenses.html" rel="jslicense">JavaScript license information</a><br />
+		&#169;2017 <a href="mailto:anizaeger@nyfnet.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
+		<a href=#top>Back to Top</a>
+	</div>
+
 	<!-- END Copyright Footer -->
 </body>
 </html>

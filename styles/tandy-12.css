@@ -9,6 +9,19 @@ div.btnMain {
 	text-align: right;
 }
 
+.footer {
+	position: fixed;
+	bottom: 0;
+}
+
+.footer.left {
+	left: 0;
+}
+
+.footer.right {
+	right: 0;
+}
+
 .controls {
 	display:table;
 }
@@ -34,8 +47,9 @@ div.btnMain {
 	border-radius:7px;
 }
 
-.btnText {
+.btnCaption {
 	color: white;
+	font-size: 10pt;
 }
 
 /* The switch - the box around the slider */
