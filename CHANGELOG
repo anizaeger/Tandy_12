@@ -1,4 +1,20 @@
-### v0.3.0-rc1 ###
+### v0.4.0 ###
+	*** CHANGES
+		API and Backend
+			- Completed initial implementation of RequireJS. Classes split into individual files.
+			- Class Flasher renamed to Blinker.
+			- OpSys::flash() renamed to OpSys::blink().
+			- Modified all occurrences throughout script to conform with the above changes.
+			- Added OpSys::flash() to bip the lights of all buttons simultaneously.
+
+		Torpedo
+			- Button now bips with its own tone, along with a flash of all buttons, when the correct row/column is pressed. This is consistent with the text of the documentation.
+
+	*** BUGFIX
+		API and Backend
+			- Corrected "ui/Manpage" to "ui/manpage".
+
+### v0.3.0 ###
 	*** CHANGES
 		UI and Frontend
 			- Modify method of playfield generation. Now uses insertRow() and insertCell() rather than static text and insertHTML.
