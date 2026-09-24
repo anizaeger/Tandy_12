@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017 Anakin-Marc Zaeger
+* Copyright (C) 2017-2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -43,6 +43,7 @@ define([], function() {
 			this.usingWebAudio = true;
 			this.listener = false;
 			this.playing = false;
+			this.volume = 0.1;
 
 			try {
 				if ( typeof AudioContext !== 'undefined' ) {
@@ -86,7 +87,13 @@ define([], function() {
 						this.osc = this.context.createOscillator();
 						this.osc.type = 'square';
 						this.osc.frequency.value = this.freq( tone );
-						this.osc.connect( this.context.destination );
+
+						/* Special thanks to Lemmy user eleijeep@piefed.social for reminding me
+						   about gain control. */
+						this.gainNode = this.context.createGain();
+						this.gainNode.gain.setValueAtTime( this.volume, this.context.currentTime);
+						this.osc.connect(this.gainNode);
+						this.gainNode.connect(this.context.destination);
 						this.osc.start();
 						this.playing = true;
 					}

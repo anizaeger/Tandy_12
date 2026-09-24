@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017 Anakin-Marc Zaeger
+* Copyright (C) 2017-2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -35,7 +35,7 @@ RETURNS:		Nothing (Void Function)
 
 function gplAlert() {
 	var copyTxt = "";
-	copyTxt += "Copyright (C) 2017, 2018, 2021 Anakin-Marc Zaeger\n"
+	copyTxt += "Copyright (C) 2017, 2018, 2021, 2026 Anakin-Marc Zaeger\n"
 	copyTxt += "\n"
 	copyTxt += "\n"
 	copyTxt += "The JavaScript code in this page is free software: you can\n"

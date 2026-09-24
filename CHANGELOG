@@ -14,7 +14,13 @@
 		API and Backend
 			- Corrected "ui/Manpage" to "ui/manpage".
 
+### v0.3.1-rc1 ###
+	*** BUGFIX
+		UI and Frontend
+			- Added gain node to kill excessively loud volume.  Special thanks to Lemmy user eleijeep@piefed.social for reminding me about gain control.
+
 ### v0.3.0 ###
+### v0.3.0-rc1 ###
 	*** CHANGES
 		UI and Frontend
 			- Modify method of playfield generation. Now uses insertRow() and insertCell() rather than static text and insertHTML.
