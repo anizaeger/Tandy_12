@@ -1,3 +1,8 @@
+### v0.3.1-rc1 ###
+	*** BUGFIX
+		UI and Frontend
+			- Added gain node to kill excessively loud volume.  Special thanks to Lemmy user eleijeep@piefed.social for reminding me about gain control.
+
 ### v0.3.0-rc1 ###
 	*** CHANGES
 		UI and Frontend
