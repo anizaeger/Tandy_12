@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017-2026 Anakin-Marc Zaeger
+* Copyright (C) 2017, 2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -43,7 +43,16 @@ define([], function() {
 			this.usingWebAudio = true;
 			this.listener = false;
 			this.playing = false;
-			this.volume = 0.1;
+			this.volume = 0;
+
+			this.volumeRgbMin = '#ff0000';
+			this.volumeRgbMax = '#00ff00';
+			this.volumeSlider = document.getElementById("volumeSlider");
+			this.volumeSlider.min = CONFIG.getVolumeMin();
+			this.volumeSlider.max = CONFIG.getVolumeMax();
+			document.getElementById("volumeMin").innerHTML = CONFIG.getVolumeMin();
+			document.getElementById("volumeMax").innerHTML = CONFIG.getVolumeMax();
+			this.volumePcnt = document.getElementById("volumePcnt");
 
 			try {
 				if ( typeof AudioContext !== 'undefined' ) {
@@ -59,6 +68,7 @@ define([], function() {
 			}
 
 			this.wake();
+			this.default();
 		}
 
 		/* -----------------------------------------------------------------------------
@@ -123,6 +133,30 @@ define([], function() {
 
 				document.body.addEventListener('touchend', resume, false);
 			}
+		}
+
+		/* -----------------------------------------------------------------------------
+		FUNCTION:		Osc::volume
+		DESCRIPTION:		Reads volume slider
+		----------------------------------------------------------------------------- */
+		adjust() {
+			// Value of slider as a decimal.
+			var sliderValue = this.volumeSlider.value;
+			this.volume = Math.round( sliderValue ) / 100;
+
+			this.volumeSlider.style.backgroundColor = INTERFACE.shadeBlend( this.volume, this.volumeRgbMin,this.volumeRgbMax );
+
+			this.volumePcnt.innerHTML = sliderValue;
+		}
+
+		/* -----------------------------------------------------------------------------
+		FUNCTION:		Osc::default
+		DESCRIPTION:		Reset volume default value.
+		----------------------------------------------------------------------------- */
+		default() {
+			this.volume = CONFIG.getVolumeDef();
+			this.volumeSlider.value = this.volume;
+			this.adjust();
 		}
 	};
 });

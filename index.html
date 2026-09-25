@@ -64,6 +64,39 @@
 					</tr>
 				</table>
 			</div>
+			<div id=volumePanel>
+				<table width=100%>
+					<tr>
+						<td />
+						<td align=center>
+							Volume
+						</td>
+						<td />
+					</tr>
+					<tr>
+						<td align=right>
+							<span id='volumeMin'></span>
+						</td>
+						<td>
+							<div class="slidecontainer">
+								<input type="range" class="clockSlide" id="volumeSlider" oninput="hw.osc.adjust()"/>
+							</div>
+						</td>
+						<td>
+							<span id='volumeMax'></span>
+						</td>
+					</tr>
+					<tr>
+						<td />
+						<td align=center>
+							<span id='volumePcnt'></span>
+						</td>
+						<td>
+							<button onclick="hw.osc.default()">Default</button>
+						</td>
+					</tr>
+				</table>
+			</div>
 			Debug Mode Toggle: <button id=dbgBtn onClick=DEBUG.toggle()>Disabled</button>
 			<div id='registers'></div>
 		</div>
@@ -152,7 +185,7 @@
 	</div>
 	<div class="right footer">
 		<a href="about/licenses.html" rel="jslicense">JavaScript license information</a><br />
-		&#169;2017, 2018, 2021 <a href="mailto:anizaeger@gmail.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
+		&#169;2017, 2018, 2021, 2026 <a href="mailto:anizaeger@gmail.net">Anakin-Marc Zaeger</a>, all rights reserved.<br \>
 		<a href=#top>Back to Top</a>
 	</div>
 

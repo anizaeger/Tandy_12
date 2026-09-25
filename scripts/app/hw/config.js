@@ -34,6 +34,9 @@ define([], function() {
 			this._clockHzMax = 8;
 			this._clockHzDef = 2;
 			this._clockPrec = 10000;
+			this._volumeMin = 0;
+			this._volumeMax = 100;
+			this._volumeDef = 25;
 		}
 
 		getClockHzMin() {
@@ -50,6 +53,18 @@ define([], function() {
 
 		getClockPrec() {
 			return this._clockPrec;
+		}
+
+		getVolumeMin() {
+			return this._volumeMin;
+		}
+
+		getVolumeMax() {
+			return this._volumeMax;
+		}
+
+		getVolumeDef() {
+			return this._volumeDef;
 		}
 	};
 });

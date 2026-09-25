@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017 Anakin-Marc Zaeger
+* Copyright (C) 2017, 2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -67,7 +67,7 @@ define([],function() {
 
 			this.light.style.backgroundColor = this.hue( this.num );
 			var origBgColor = window.getComputedStyle( this.light ).getPropertyValue( 'background-color' );
-			var newBgColor = this.hw.shadeBlend( brightness ,origBgColor );
+			var newBgColor = INTERFACE.shadeBlend( brightness ,origBgColor );
 			this.light.style.backgroundColor = newBgColor;
 		}
 	};

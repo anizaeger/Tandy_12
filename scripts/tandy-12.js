@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017-2026 Anakin-Marc Zaeger
+* Copyright (C) 2017, 2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -70,7 +70,7 @@ DESCRIPTION:		Generates HTML code for Tandy-12 buttons and adds them
 			to the main page.
 ----------------------------------------------------------------------------- */
 
-require(['hw/config', 'hw/mobo', 'fw/debug'], function(Config, Tandy12, Debug) {
+require(['hw/config', 'hw/mobo', 'fw/debug', 'ui/interface'], function(Config, Tandy12, Debug, Interface) {
 	window.PROGS = [
 		'Organ',
 		'Song_Writer',
@@ -166,5 +166,6 @@ require(['hw/config', 'hw/mobo', 'fw/debug'], function(Config, Tandy12, Debug) {
 	}
 	window.CONFIG = new Config();
 	window.DEBUG = new Debug();
+	window.INTERFACE = new Interface();
 	window.hw = new Tandy12();
 });

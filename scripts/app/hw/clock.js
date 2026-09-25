@@ -5,7 +5,7 @@
 * @licstart  The following is the entire license notice for the 
 * JavaScript code in this page.
 *
-* Copyright (C) 2017 Anakin-Marc Zaeger
+* Copyright (C) 2017, 2026 Anakin-Marc Zaeger
 *
 *
 * The JavaScript code in this page is free software: you can
@@ -207,7 +207,7 @@ define([], function() {
 			var newHz = Math.round( this.ratioToHz( ratio ) * 100 ) / 100;
 			var newMs = Math.round( this.hzToMs( newHz ));
 
-			this.clockslide.style.backgroundColor = this.hw.shadeBlend( ratio, this.clockRgbMin,this.clockRgbMax );
+			this.clockslide.style.backgroundColor = INTERFACE.shadeBlend( ratio, this.clockRgbMin,this.clockRgbMax );
 
 			this.clockHz.innerHTML = newHz + 'hz';
 			this.clockMs.value = newMs;
@@ -221,7 +221,7 @@ define([], function() {
 		DESCRIPTION:		Reset clock rate to default value.
 		----------------------------------------------------------------------------- */
 		default() {
-			var ms = this.hzToMs( CONFIG.getClockHzDef());
+			var ms = this.hzToMs( window.CONFIG.getClockHzDef());
 			var ratio = this.msToRatio( ms )
 			this.clockslide.value = ratio;
 			this.adjust();
