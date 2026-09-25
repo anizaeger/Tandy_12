@@ -1,8 +1,33 @@
+### v0.5.0 ###
+	*** CHANGES
+		UI and Frontend
+			- Added a volume control.
+
+		API and Backend
+			- Moved Tandy12::shadeBlend to new class Interface, changed applicable files.
+
+### v0.4.0 ###
+	*** CHANGES
+		API and Backend
+			- Completed initial implementation of RequireJS. Classes split into individual files.
+			- Class Flasher renamed to Blinker.
+			- OpSys::flash() renamed to OpSys::blink().
+			- Modified all occurrences throughout script to conform with the above changes.
+			- Added OpSys::flash() to bip the lights of all buttons simultaneously.
+
+		Torpedo
+			- Button now bips with its own tone, along with a flash of all buttons, when the correct row/column is pressed. This is consistent with the text of the documentation.
+
+	*** BUGFIX
+		API and Backend
+			- Corrected "ui/Manpage" to "ui/manpage".
+
 ### v0.3.1-rc1 ###
 	*** BUGFIX
 		UI and Frontend
 			- Added gain node to kill excessively loud volume.  Special thanks to Lemmy user eleijeep@piefed.social for reminding me about gain control.
 
+### v0.3.0 ###
 ### v0.3.0-rc1 ###
 	*** CHANGES
 		UI and Frontend
